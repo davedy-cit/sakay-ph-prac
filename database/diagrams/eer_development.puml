@@ -1,0 +1,397 @@
+@startuml eer_development
+' ============================================================
+' Sakay.ph - EER Diagram (ADVANCED / DETAILED DESIGN)
+' One comprehensive view: every table, PK/FK, weak and
+' associative entities, supertype/subtype, unary relationship.
+' ============================================================
+skinparam backgroundColor #FFFFFF
+skinparam dpi 150
+skinparam defaultFontName Segoe UI
+skinparam linetype ortho
+skinparam ArrowColor #2D6DA3
+skinparam entity {
+  BackgroundColor #EEF5FB
+  BorderColor #1F4E79
+  FontColor #222222
+  FontSize 12
+  AttributeFontSize 10
+}
+skinparam NoteBackgroundColor #FFF7EC
+skinparam NoteBorderColor #E67E22
+hide circle
+
+title <b>Sakay.ph — EER Diagram (Advanced Design)</b>\n<size:12><color:#7A8AA0>Detailed view — full schema, foreign keys, weak / associative entities, specialization</color></size>
+
+' ==================== SUPER- AND SUBTYPES ====================
+entity "USER" as user {
+  * user_id : UUID <<PK>>
+  --
+  * full_name : VARCHAR(120)
+  * phone : VARCHAR(15)
+  email : VARCHAR(120)
+  * password_hash : VARCHAR(255)
+  * registration_date : DATE
+  * user_role : VARCHAR(12)
+  * account_status : VARCHAR(12)
+}
+
+entity "PASSENGER" as pax {
+  * passenger_id : UUID <<PK, FK>>
+  --
+  * home_address : VARCHAR(255)
+  * gcash_number : VARCHAR(15)
+  verified_at : DATETIME
+  rating_avg : DECIMAL(2,1) <<derived>>
+}
+
+entity "DRIVER" as drv {
+  * driver_id : UUID <<PK, FK>>
+  --
+  * license_number : VARCHAR(30) <<UQ>>
+  * accreditation_status : VARCHAR(12)
+  * is_online : BOOLEAN
+  rating : DECIMAL(2,1)
+  * total_trips : INT
+}
+
+' ==================== DRIVER SIDE ====================
+entity "VEHICLE" as veh {
+  * vehicle_id : UUID <<PK>>
+  --
+  * driver_id : UUID <<FK, UQ>>
+  * mode_code : VARCHAR(12) <<FK>>
+  * plate_number : VARCHAR(12) <<UQ>>
+  * model : VARCHAR(60)
+  capacity : SMALLINT
+  route_info : VARCHAR(120)
+}
+
+entity "ACCREDITATION" as accr {
+  * accreditation_id : UUID <<PK>>
+  --
+  * driver_id : UUID <<FK>>
+  * lgu_code : VARCHAR(12) <<FK>>
+  * badge_no : VARCHAR(20) <<UQ>>
+  * status : VARCHAR(12)
+  * expiry_date : DATE
+  * badge_visible : BOOLEAN
+}
+
+entity "LGU_UNIT" as lgu {
+  * lgu_code : VARCHAR(12) <<PK>>
+  --
+  * lgu_name : VARCHAR(80)
+  * province : VARCHAR(60)
+  * region : VARCHAR(40)
+  contact_no : VARCHAR(20)
+}
+
+' ==================== LOOKUP TABLES ====================
+entity "RIDE_MODE" as mode {
+  * mode_code : VARCHAR(12) <<PK>>
+  --
+  * mode_name : VARCHAR(30)
+  * base_fare : DECIMAL(8,2)
+  * per_km_rate : DECIMAL(8,2)
+  * seat_capacity : SMALLINT
+  * is_shared : BOOLEAN
+}
+
+entity "PAYMENT_METHOD" as pm {
+  * method_code : VARCHAR(12) <<PK>>
+  --
+  * method_name : VARCHAR(30)
+  * is_digital : BOOLEAN
+  gateway_name : VARCHAR(30)
+}
+
+entity "SURGE_PERIOD" as surge {
+  * surge_id : UUID <<PK>>
+  --
+  lgu_code : VARCHAR(12) <<FK>>
+  * surge_label : VARCHAR(40)
+  * trigger_type : VARCHAR(12)
+  * multiplier : DECIMAL(4,2)
+  * starts_at : DATETIME
+  * ends_at : DATETIME
+  * is_active : BOOLEAN
+}
+
+' ==================== LOCATION ====================
+entity "LOCATION" as loc {
+  * location_id : UUID <<PK>>
+  --
+  * street : VARCHAR(120)
+  * barangay : VARCHAR(60)
+  * city : VARCHAR(60)
+  * province : VARCHAR(60)
+  landmark : VARCHAR(120)
+  * latitude : DECIMAL(9,6)
+  * longitude : DECIMAL(9,6)
+}
+
+' ==================== RIDE AND ITS LEGS ====================
+entity "RIDE" as ride {
+  * ride_id : UUID <<PK>>
+  --
+  * passenger_id : UUID <<FK>>
+  driver_id : UUID <<FK>>
+  vehicle_id : UUID <<FK>>
+  * mode_code : VARCHAR(12) <<FK>>
+  * pickup_location_id : UUID <<FK>>
+  * dropoff_location_id : UUID <<FK>>
+  * status : VARCHAR(16)
+  * is_trip_chain : BOOLEAN
+  leg_count : SMALLINT
+  fare_estimate : DECIMAL(10,2)
+  final_fare : DECIMAL(10,2) <<derived>>
+  * request_time : DATETIME
+  matched_at : DATETIME
+  ended_at : DATETIME
+}
+
+entity "RIDE_LEG" as leg <<weak>> {
+  * ride_id : UUID <<PK, FK>>
+  * leg_no : SMALLINT <<PK>>
+  --
+  * mode_code : VARCHAR(12) <<FK>>
+  driver_id : UUID <<FK>>
+  * origin_location_id : UUID <<FK>>
+  * dest_location_id : UUID <<FK>>
+  * fare : DECIMAL(10,2)
+  distance_km : DECIMAL(6,2)
+  eta_minutes : SMALLINT
+  surge_id : UUID <<FK>>
+  * status : VARCHAR(16)
+}
+
+' ==================== PAKYAWAN (SHARE-RIDE) ====================
+entity "PAKYAWAN_GROUP" as grp {
+  * group_id : UUID <<PK>>
+  --
+  * ride_id : UUID <<FK, UQ>>
+  * direction : VARCHAR(120)
+  * max_seats : SMALLINT
+  * matched_seats : SMALLINT
+  * group_status : VARCHAR(12)
+}
+
+entity "FARE_SHARE" as share {
+  * payment_id : UUID <<PK, FK>>
+  * passenger_id : UUID <<PK, FK>>
+  --
+  * group_id : UUID <<FK>>
+  * passenger_count : SMALLINT
+  * share_amount : DECIMAL(10,2)
+  * is_paid : BOOLEAN
+}
+
+' ==================== MONEY ====================
+entity "WALLET" as wallet {
+  * wallet_id : UUID <<PK>>
+  --
+  * passenger_id : UUID <<FK, UQ>>
+  * balance : DECIMAL(12,2)
+  * currency : CHAR(3)
+  * updated_at : DATETIME
+}
+
+entity "WALLET_TXN" as txn {
+  * txn_id : UUID <<PK>>
+  --
+  * wallet_id : UUID <<FK>>
+  payment_id : UUID <<FK>>
+  * txn_type : VARCHAR(12)
+  * amount : DECIMAL(10,2)
+  * balance_after : DECIMAL(12,2)
+  gateway_ref : VARCHAR(40)
+  * created_at : DATETIME
+}
+
+entity "PAYMENT" as pay {
+  * payment_id : UUID <<PK>>
+  --
+  * ride_id : UUID <<FK, UQ>>
+  * payer_id : UUID <<FK>>
+  * method_code : VARCHAR(12) <<FK>>
+  wallet_id : UUID <<FK>>
+  * amount : DECIMAL(10,2)
+  gateway_ref : VARCHAR(40)
+  * status : VARCHAR(16)
+  * paid_at : DATETIME
+}
+
+entity "RECEIPT" as rcpt {
+  * receipt_no : VARCHAR(20) <<PK>>
+  --
+  * payment_id : UUID <<FK, UQ>>
+  * total_amount : DECIMAL(10,2)
+  * issued_at : DATETIME
+  receipt_url : VARCHAR(255)
+}
+
+entity "DRIVER_PAYOUT" as payout {
+  * payout_id : UUID <<PK>>
+  --
+  * driver_id : UUID <<FK>>
+  * method_code : VARCHAR(12) <<FK>>
+  * amount : DECIMAL(10,2)
+  gateway_ref : VARCHAR(40)
+  * status : VARCHAR(12)
+  * requested_at : DATETIME
+  paid_at : DATETIME
+}
+
+' ==================== SAFETY ====================
+entity "SOS_ALERT" as sos {
+  * alert_id : UUID <<PK>>
+  --
+  * ride_id : UUID <<FK, UQ>>
+  * raised_by : UUID <<FK>>
+  * alert_type : VARCHAR(20)
+  * alert_lat : DECIMAL(9,6)
+  * alert_long : DECIMAL(9,6)
+  * status : VARCHAR(12)
+  * triggered_at : DATETIME
+  resolved_at : DATETIME
+}
+
+entity "TRUSTED_CONTACT" as tc {
+  * contact_id : UUID <<PK>>
+  --
+  * passenger_id : UUID <<FK>>
+  * contact_name : VARCHAR(120)
+  * contact_mobile : VARCHAR(15)
+  relationship : VARCHAR(30)
+}
+
+entity "SOS_NOTIFICATION" as sosn {
+  * alert_id : UUID <<PK, FK>>
+  * contact_id : UUID <<PK, FK>>
+  --
+  * notified_at : DATETIME
+  * delivery_status : VARCHAR(12)
+}
+
+entity "TRIP_TRACKING" as track {
+  * track_id : BIGINT <<PK>>
+  --
+  * ride_id : UUID <<FK>>
+  * latitude : DECIMAL(9,6)
+  * longitude : DECIMAL(9,6)
+  * recorded_at : DATETIME
+}
+
+' ==================== LIFECYCLE ====================
+entity "CANCELLATION" as cancel {
+  * cancel_id : UUID <<PK>>
+  --
+  * ride_id : UUID <<FK, UQ>>
+  * cancelled_by : UUID <<FK>>
+  * reason_code : VARCHAR(20)
+  * fee_amount : DECIMAL(10,2)
+  * refund_amount : DECIMAL(10,2)
+  * cancelled_at : DATETIME
+}
+
+entity "RATING" as rating {
+  * rating_id : UUID <<PK>>
+  --
+  * ride_id : UUID <<FK>>
+  * rater_user_id : UUID <<FK>>
+  * ratee_user_id : UUID <<FK>>
+  * stars : SMALLINT
+  comment : VARCHAR(255)
+  * rated_at : DATETIME
+}
+
+entity "PASSENGER_PREFERRED_MODE" as pref {
+  * passenger_id : UUID <<PK, FK>>
+  * mode_code : VARCHAR(12) <<PK, FK>>
+  --
+  * preferred_rank : SMALLINT
+}
+
+' ==================== SPECIALIZATION ====================
+user <|-- pax
+user <|-- drv
+
+' ==================== RELATIONSHIPS ====================
+pax    ||--o| wallet   : "owns"
+pax    ||--o{ pref     : "prefers"
+mode   ||--o{ pref     : "chosen as"
+
+pax    ||--o{ ride     : "books"
+drv    |o--o{ ride     : "drives"
+veh    |o--o{ ride     : "assigned to"
+mode   ||--o{ ride     : "requested as"
+ride   }o--|| loc      : "pickup"
+ride   }o--|| loc      : "drop-off"
+
+drv    ||--o| veh      : "operates"
+drv    ||--o{ accr     : "holds"
+lgu    ||--o{ accr     : "issues"
+mode   ||--o{ veh      : "classified as"
+lgu    |o--o{ surge    : "declares"
+
+ride   ||--|{ leg      : "consists of"
+mode   ||--o{ leg      : "runs as"
+drv    |o--o{ leg      : "runs"
+surge  |o--o{ leg      : "applied to"
+leg    }o--|| loc      : "from"
+leg    }o--|| loc      : "to"
+
+ride   ||--o| grp      : "may form"
+grp    ||--o{ share    : "splits across"
+pay    ||--o{ share    : "split into"
+pax    ||--o{ share    : "owes"
+
+wallet ||--o{ txn      : "logs"
+pay    |o--o{ txn      : "settles"
+pay    }o--o| wallet   : "charged to"
+pay    ||--o| rcpt     : "issues"
+
+drv    ||--o{ payout   : "is paid by"
+pm     ||--o{ payout   : "paid out via"
+
+ride   ||--o| sos      : "may raise"
+sos    ||--o{ sosn     : "notifies"
+tc     ||--o{ sosn     : "receives"
+pax    ||--o{ tc       : "registers"
+ride   ||--o{ track    : "tracked by"
+
+ride   ||--o| pay      : "settled by"
+pax    ||--o{ pay      : "pays"
+pm     ||--o{ pay      : "paid via"
+ride   ||--o| cancel   : "may have"
+user   ||--o{ cancel   : "cancels"
+user   ||--o{ sos      : "raises"
+ride   ||--o{ rating   : "receives"
+user   ||--o{ rating   : "writes"
+user   ||--o{ rating   : "is rated in"
+
+note right of user
+  <b>Supertype / subtype.</b> USER is the supertype;
+  PASSENGER and DRIVER are its subtypes — <b>disjoint</b>
+  and <b>total</b> (every user is exactly one of them,
+  discriminated by user_role). Subtype PK = FK to USER.
+end note
+
+note bottom of leg
+  <b>Weak entity.</b> RIDE_LEG has no identifier of its
+  own: PK = (ride_id, leg_no), existence-dependent on
+  RIDE through the identifying relationship — the
+  Isang Biyahe multi-leg chain.
+end note
+
+legend bottom
+  <b>EER constructs in this schema</b>
+  <b>Associative entities</b> resolve M:N — FARE_SHARE (PAYMENT x PASSENGER) · SOS_NOTIFICATION (SOS_ALERT x TRUSTED_CONTACT)
+  <b>Unary / recursive</b> — RATING relates to USER twice (rater_user_id, ratee_user_id)
+  <b>Derived</b> — RIDE.final_fare · PASSENGER.rating_avg        <b>Multivalued</b> — preferredModes -> PASSENGER_PREFERRED_MODE · notifiedContacts -> SOS_NOTIFICATION
+  <b>Composite</b> — address -> street / barangay / city / province
+  <b>Bagyo Mode</b> — SURGE_PERIOD declares the weather / demand multiplier; RIDE_LEG.surge_id records the one actually applied to a leg
+  ----
+  <b>Cardinality</b> — || mandatory one · }| mandatory many · }o optional many · |o optional one      <b>PK</b> primary key · <b>FK</b> foreign key · <b>UQ</b> unique
+end legend
+@enduml

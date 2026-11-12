@@ -1,0 +1,216 @@
+@startuml eer_core
+' ============================================================
+' Sakay.ph - EER Diagram, PART 1 of 2 (ADVANCED DESIGN)
+' People, vehicles, accreditation, rides and locations.
+' Self-contained half of eer_development.puml - same tables,
+' same columns. Money / Pakyawan / safety / lifecycle tables
+' are in eer_features.puml.
+' ============================================================
+skinparam backgroundColor #FFFFFF
+skinparam dpi 150
+skinparam defaultFontName Segoe UI
+skinparam linetype ortho
+skinparam ArrowColor #2D6DA3
+skinparam entity {
+  BackgroundColor #EEF5FB
+  BorderColor #1F4E79
+  FontColor #222222
+  FontSize 12
+  AttributeFontSize 10
+}
+skinparam NoteBackgroundColor #FFF7EC
+skinparam NoteBorderColor #E67E22
+hide circle
+
+title <b>Sakay.ph — EER Diagram, Part 1: People, Vehicles and Rides</b>\n<size:12><color:#7A8AA0>Advanced design (1 of 2) — see eer_features.puml for money, Pakyawan, safety and lifecycle tables</color></size>
+
+' ==================== SUPER- AND SUBTYPES ====================
+entity "USER" as user {
+  * user_id : UUID <<PK>>
+  --
+  * full_name : VARCHAR(120)
+  * phone : VARCHAR(15)
+  email : VARCHAR(120)
+  * password_hash : VARCHAR(255)
+  * registration_date : DATE
+  * user_role : VARCHAR(12)
+  * account_status : VARCHAR(12)
+}
+
+entity "PASSENGER" as pax {
+  * passenger_id : UUID <<PK, FK>>
+  --
+  * home_address : VARCHAR(255)
+  * gcash_number : VARCHAR(15)
+  verified_at : DATETIME
+  rating_avg : DECIMAL(2,1) <<derived>>
+}
+
+entity "DRIVER" as drv {
+  * driver_id : UUID <<PK, FK>>
+  --
+  * license_number : VARCHAR(30) <<UQ>>
+  * accreditation_status : VARCHAR(12)
+  * is_online : BOOLEAN
+  rating : DECIMAL(2,1)
+  * total_trips : INT
+}
+
+' ==================== DRIVER SIDE ====================
+entity "VEHICLE" as veh {
+  * vehicle_id : UUID <<PK>>
+  --
+  * driver_id : UUID <<FK, UQ>>
+  * mode_code : VARCHAR(12) <<FK>>
+  * plate_number : VARCHAR(12) <<UQ>>
+  * model : VARCHAR(60)
+  capacity : SMALLINT
+  route_info : VARCHAR(120)
+}
+
+entity "ACCREDITATION" as accr {
+  * accreditation_id : UUID <<PK>>
+  --
+  * driver_id : UUID <<FK>>
+  * lgu_code : VARCHAR(12) <<FK>>
+  * badge_no : VARCHAR(20) <<UQ>>
+  * status : VARCHAR(12)
+  * expiry_date : DATE
+  * badge_visible : BOOLEAN
+}
+
+entity "LGU_UNIT" as lgu {
+  * lgu_code : VARCHAR(12) <<PK>>
+  --
+  * lgu_name : VARCHAR(80)
+  * province : VARCHAR(60)
+  * region : VARCHAR(40)
+  contact_no : VARCHAR(20)
+}
+
+' ==================== LOOKUP ====================
+entity "RIDE_MODE" as mode {
+  * mode_code : VARCHAR(12) <<PK>>
+  --
+  * mode_name : VARCHAR(30)
+  * base_fare : DECIMAL(8,2)
+  * per_km_rate : DECIMAL(8,2)
+  * seat_capacity : SMALLINT
+  * is_shared : BOOLEAN
+}
+
+entity "SURGE_PERIOD" as surge {
+  * surge_id : UUID <<PK>>
+  --
+  lgu_code : VARCHAR(12) <<FK>>
+  * surge_label : VARCHAR(40)
+  * trigger_type : VARCHAR(12)
+  * multiplier : DECIMAL(4,2)
+  * starts_at : DATETIME
+  * ends_at : DATETIME
+  * is_active : BOOLEAN
+}
+
+entity "PASSENGER_PREFERRED_MODE" as pref {
+  * passenger_id : UUID <<PK, FK>>
+  * mode_code : VARCHAR(12) <<PK, FK>>
+  --
+  * preferred_rank : SMALLINT
+}
+
+' ==================== LOCATION ====================
+entity "LOCATION" as loc {
+  * location_id : UUID <<PK>>
+  --
+  * street : VARCHAR(120)
+  * barangay : VARCHAR(60)
+  * city : VARCHAR(60)
+  * province : VARCHAR(60)
+  landmark : VARCHAR(120)
+  * latitude : DECIMAL(9,6)
+  * longitude : DECIMAL(9,6)
+}
+
+' ==================== RIDE AND ITS LEGS ====================
+entity "RIDE" as ride {
+  * ride_id : UUID <<PK>>
+  --
+  * passenger_id : UUID <<FK>>
+  driver_id : UUID <<FK>>
+  vehicle_id : UUID <<FK>>
+  * mode_code : VARCHAR(12) <<FK>>
+  * pickup_location_id : UUID <<FK>>
+  * dropoff_location_id : UUID <<FK>>
+  * status : VARCHAR(16)
+  * is_trip_chain : BOOLEAN
+  leg_count : SMALLINT
+  fare_estimate : DECIMAL(10,2)
+  final_fare : DECIMAL(10,2) <<derived>>
+  * request_time : DATETIME
+  matched_at : DATETIME
+  ended_at : DATETIME
+}
+
+entity "RIDE_LEG" as leg <<weak>> {
+  * ride_id : UUID <<PK, FK>>
+  * leg_no : SMALLINT <<PK>>
+  --
+  * mode_code : VARCHAR(12) <<FK>>
+  driver_id : UUID <<FK>>
+  * origin_location_id : UUID <<FK>>
+  * dest_location_id : UUID <<FK>>
+  * fare : DECIMAL(10,2)
+  distance_km : DECIMAL(6,2)
+  eta_minutes : SMALLINT
+  surge_id : UUID <<FK>>
+  * status : VARCHAR(16)
+}
+
+' ==================== SPECIALIZATION ====================
+user <|-- pax
+user <|-- drv
+
+' ==================== RELATIONSHIPS ====================
+pax    ||--o{ pref     : "prefers"
+mode   ||--o{ pref     : "chosen as"
+
+drv    ||--o| veh      : "operates"
+mode   ||--o{ veh      : "classified as"
+drv    ||--o{ accr     : "holds"
+lgu    ||--o{ accr     : "issues"
+lgu    |o--o{ surge    : "declares"
+
+pax    ||--o{ ride     : "books"
+drv    |o--o{ ride     : "drives"
+veh    |o--o{ ride     : "assigned to"
+mode   ||--o{ ride     : "requested as"
+ride   }o--|| loc      : "pickup"
+ride   }o--|| loc      : "drop-off"
+
+ride   ||--|{ leg      : "consists of"
+mode   ||--o{ leg      : "runs as"
+drv    |o--o{ leg      : "runs"
+surge  |o--o{ leg      : "applied to"
+leg    }o--|| loc      : "from"
+leg    }o--|| loc      : "to"
+
+note right of user
+  <b>Supertype / subtype.</b> USER is the supertype;
+  PASSENGER and DRIVER are its subtypes — <b>disjoint</b>
+  and <b>total</b> (every user is exactly one of them,
+  discriminated by user_role). Subtype PK = FK to USER.
+end note
+
+note bottom of leg
+  <b>Weak entity.</b> RIDE_LEG has no identifier of its
+  own: PK = (ride_id, leg_no), existence-dependent on
+  RIDE through the identifying relationship — the
+  Isang Biyahe multi-leg chain.
+end note
+
+legend bottom
+  <b>Cardinality</b> — || mandatory one · }| mandatory many · }o optional many · |o optional one      <b>PK</b> primary key · <b>FK</b> foreign key · <b>UQ</b> unique
+  <b>Bagyo Mode</b> — SURGE_PERIOD declares the weather / demand multiplier; RIDE_LEG.surge_id records the one actually applied to a leg
+  <b>Part 2 of 2</b> — PAYMENT, WALLET, RECEIPT, DRIVER_PAYOUT, PAKYAWAN_GROUP, FARE_SHARE, SOS_ALERT, RATING, CANCELLATION and the other money / safety / lifecycle tables are in <b>eer_features.puml</b>.
+end legend
+@enduml

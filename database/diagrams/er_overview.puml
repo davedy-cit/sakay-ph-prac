@@ -1,0 +1,110 @@
+@startuml er_overview
+' ============================================================
+' Sakay.ph - ER Diagram (BASIC DATA MODEL)
+' Crow's foot / Information Engineering notation only.
+' Simple design: entity types and identifier keys.
+' ============================================================
+skinparam backgroundColor #FFFFFF
+skinparam dpi 150
+skinparam defaultFontName Segoe UI
+skinparam linetype ortho
+skinparam ArrowColor #2D6DA3
+skinparam entity {
+  BackgroundColor #EEF5FB
+  BorderColor #1F4E79
+  FontColor #222222
+  FontSize 13
+  AttributeFontSize 11
+}
+skinparam NoteBackgroundColor #FFF7EC
+skinparam NoteBorderColor #E67E22
+hide circle
+
+title <b>Sakay.ph — ER Diagram (Basic Data Model)</b>\n<size:12><color:#7A8AA0>Simple design — crow's foot notation, identifier keys only</color></size>
+
+entity "USER" as user {
+  * user_id : UUID <<PK>>
+  --
+  * full_name : VARCHAR(120)
+  * phone : VARCHAR(15)
+  email : VARCHAR(120)
+  password_hash : VARCHAR(255)
+}
+
+entity "DRIVER" as driver {
+  * driver_id : UUID <<PK>>
+  --
+  * user_id : UUID <<FK, UQ>>
+  * license_number : VARCHAR(30)
+  is_online : BOOLEAN
+  rating : DECIMAL(2,1)
+}
+
+entity "VEHICLE" as vehicle {
+  * vehicle_id : UUID <<PK>>
+  --
+  * driver_id : UUID <<FK, UQ>>
+  * plate_number : VARCHAR(12) <<UQ>>
+  * mode_code : VARCHAR(12)
+  capacity : SMALLINT
+}
+
+entity "RIDE" as ride {
+  * ride_id : UUID <<PK>>
+  --
+  * passenger_id : UUID <<FK>>
+  driver_id : UUID <<FK>>
+  vehicle_id : UUID <<FK>>
+  * pickup_location_id : UUID <<FK>>
+  * dropoff_location_id : UUID <<FK>>
+  * mode_code : VARCHAR(12)
+  * status : VARCHAR(16)
+  final_fare : DECIMAL(10,2)
+  * request_time : DATETIME
+}
+
+entity "LOCATION" as location {
+  * location_id : UUID <<PK>>
+  --
+  * address : VARCHAR(255)
+  landmark : VARCHAR(120)
+  * latitude : DECIMAL(9,6)
+  * longitude : DECIMAL(9,6)
+}
+
+entity "PAYMENT" as payment {
+  * payment_id : UUID <<PK>>
+  --
+  * ride_id : UUID <<FK, UQ>>
+  * method_code : VARCHAR(12)
+  * amount : DECIMAL(10,2)
+  * status : VARCHAR(16)
+  * paid_at : DATETIME
+}
+
+' ---- relationships: symbol at an entity end = how many of THAT entity per the other ----
+user     ||--o| driver   : "may be"
+user     ||--o{ ride     : "books"
+driver   |o--o{ ride     : "drives"
+driver   ||--o| vehicle  : "operates"
+vehicle  |o--o{ ride     : "assigned to"
+ride     }o--|| location : "pickup"
+ride     }o--|| location : "drop-off"
+ride     ||--o| payment  : "settled by"
+
+note right of ride
+  <b>Simplified model.</b> Passenger and Driver are
+  both USERs here; feature tables (trip chains,
+  Pakyawan, wallet, safety, ratings) and the
+  supertype/subtype design appear in the EER.
+end note
+
+legend right
+  <b>Crow's foot cardinality</b>
+  <b>||</b> mandatory one      <b>}|</b> mandatory many
+  <b>|o</b> optional one       <b>}o</b> optional many
+  ----
+  Solid line = identifying relationship
+  <b>PK</b> primary key · <b>FK</b> foreign key · <b>UQ</b> unique
+end legend
+@enduml
