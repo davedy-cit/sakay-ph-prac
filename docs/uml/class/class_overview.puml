@@ -1,0 +1,80 @@
+@startuml class_overview
+' ============================================================
+' Sakay.ph - Class Diagram (OVERVIEW VERSION)
+' High-level domain view: the five required concepts only
+' (Ride, User, Driver, Location, Payment)
+' ============================================================
+skinparam backgroundColor #FFFFFF
+skinparam dpi 150
+skinparam defaultFontName Segoe UI
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #EEF5FB
+  BorderColor #1F4E79
+  ArrowColor #2D6DA3
+  FontSize 13
+  AttributeFontSize 12
+}
+skinparam abstract {
+  BackgroundColor #E4EEF7
+}
+skinparam NoteBackgroundColor #FFF7EC
+skinparam NoteBorderColor #E67E22
+
+title <b>Sakay.ph — Class Diagram (Overview)</b>\n<size:12><color:#7A8AA0>High-level domain view — core concepts of the ride-hailing lifecycle</color></size>
+
+abstract class User {
+  # userId
+  # fullName
+  # phone
+  + register()
+  + login()
+}
+
+class Passenger {
+  + bookRide()
+  + cancelTrip()
+  + makePayment()
+}
+
+class Driver {
+  + acceptRide()
+  + startTrip()
+  + endTrip()
+}
+
+class Ride {
+  - rideId
+  - origin
+  - destination
+  - fare
+  - status
+}
+
+class Location {
+  - latitude
+  - longitude
+  - address
+}
+
+class Payment {
+  - amount
+  - method
+  - status
+  + process()
+  + generateReceipt()
+}
+
+User <|-- Passenger
+User <|-- Driver
+
+Passenger "1" --> "0..*" Ride : books
+Driver "1" --> "0..*" Ride : drives
+Ride "1" --> "2" Location : has origin /\ndestination
+Ride "1" --> "1" Payment : paid by
+
+note bottom of Ride
+  Core flow: Book Ride -> driver matching ->
+  Trip starts -> Trip ends -> Payment processed
+end note
+@enduml

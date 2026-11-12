@@ -1,0 +1,154 @@
+@startuml usecase_development
+' ============================================================
+' Sakay.ph - Use Case Diagram (ACTUAL DEVELOPMENT VERSION)
+' Detailed view: <<include>> / <<extend>> relationships,
+' external systems, and Sakay.ph-specific feature use cases
+' ============================================================
+left to right direction
+skinparam backgroundColor #FFFFFF
+skinparam dpi 150
+skinparam defaultFontName Segoe UI
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #EEF5FB
+  BorderColor #1F4E79
+  ArrowColor #1F4E79
+  FontSize 11
+}
+skinparam rectangle {
+  BorderColor #1F4E79
+  FontSize 14
+}
+skinparam ArrowColor #2D6DA3
+skinparam NoteBackgroundColor #FFF7EC
+skinparam NoteBorderColor #E67E22
+
+title <b>Sakay.ph — Use Case Diagram (Actual Development)</b>\n<size:12><color:#7A8AA0>Detailed view — includes, extends, and external systems</color></size>
+
+actor "Passenger" as Passenger
+actor "Driver" as Driver
+actor "System\n(matching, pricing\nand payouts)" as System
+actor "GCash / Maya\n(payment gateway)" as Gateway
+actor "LGU / Barangay\n(accreditation)" as LGU
+
+rectangle "Sakay.ph Ride-Hailing System" {
+
+  ' ---- Account management ----
+  usecase "Create Account / Log In" as UC_Login
+  usecase "Verify Identity\n(OTP / valid ID)" as UC_Verify
+
+  ' ---- Booking ----
+  usecase "Book Ride" as UC_Book
+  usecase "Select Ride Mode\n(tricycle, jeep, UV,\nhabal-habal, e-trike, car)" as UC_Mode
+  usecase "Calculate Fare\n& ETA Estimate" as UC_Fare
+  usecase "Apply Bagyo Mode\n(weather surge)" as UC_BagyoMode
+  usecase "Book Trip Chain\n(Isang Biyahe - multi-leg)" as UC_Chain
+  usecase "Match Pakyawan\nShare-Ride Group" as UC_Pakyawan
+  usecase "Notify No Driver\nAvailable (timeout)" as UC_NoDriver
+
+  ' ---- Driver side ----
+  usecase "Register as Driver\n(Sertipikadong Manong)" as UC_RegDriver
+  usecase "Validate LGU\nAccreditation" as UC_Accred
+  usecase "Accept Ride" as UC_Accept
+  usecase "Respond to Booking\nRequest (accept/decline)" as UC_Respond
+  usecase "Start Trip" as UC_Start
+  usecase "End Trip" as UC_End
+
+  ' ---- During trip ----
+  usecase "Cancel Trip" as UC_Cancel
+  usecase "Apply Cancellation\nPolicy (fee / refund)" as UC_CancelPolicy
+  usecase "Track Ride\n(Saan ang Jeep?)" as UC_Track
+  usecase "Share Trip Status\n(safety monitoring)" as UC_Share
+  usecase "Trigger SOS Bantay\n(emergency alert)" as UC_SOS
+
+  ' ---- Payment ----
+  usecase "Process Payment" as UC_Pay
+  usecase "Charge Digital Wallet\n(GCash / Maya)" as UC_Wallet
+  usecase "Handle Cash Payment" as UC_Cash
+  usecase "Split Fare Among\nPakyawan Passengers" as UC_Split
+  usecase "Issue Receipt" as UC_Receipt
+
+  ' ---- Post-trip ----
+  usecase "Rate Trip\n& Driver" as UC_Rate
+  usecase "Payout Driver\nEarnings" as UC_Payout
+}
+
+' ============ Passenger associations ============
+Passenger --> UC_Login
+Passenger --> UC_Book
+Passenger --> UC_Track
+Passenger --> UC_Cancel
+Passenger --> UC_SOS
+Passenger --> UC_Rate
+
+' ============ Driver associations ============
+Driver --> UC_Login
+Driver --> UC_RegDriver
+Driver --> UC_Accept
+Driver --> UC_Respond
+Driver --> UC_Start
+Driver --> UC_End
+Driver --> UC_Cancel
+
+' ============ System associations ============
+System --> UC_Pakyawan
+System --> UC_NoDriver
+System --> UC_Pay
+System --> UC_Payout
+
+' ============ External actors ============
+Gateway --> UC_Wallet
+LGU --> UC_Accred
+
+' ============ include relationships ============
+UC_Book ..> UC_Login : <<include>>
+UC_Book ..> UC_Mode : <<include>>
+UC_Book ..> UC_Fare : <<include>>
+UC_Pay ..> UC_Fare : <<include>>
+UC_Pay ..> UC_Receipt : <<include>>
+UC_Start ..> UC_Login : <<include>>
+UC_RegDriver ..> UC_Accred : <<include>>
+
+' ============ extend relationships ============
+UC_Login ..> UC_Verify : <<extend>>
+UC_Accept ..> UC_Respond : <<extend>>
+UC_Chain ..> UC_Book : <<extend>>
+UC_Pakyawan ..> UC_Book : <<extend>>
+UC_NoDriver ..> UC_Book : <<extend>>
+UC_BagyoMode ..> UC_Fare : <<extend>>
+UC_Split ..> UC_Pay : <<extend>>
+UC_Wallet ..> UC_Pay : <<extend>>
+UC_Cash ..> UC_Pay : <<extend>>
+UC_CancelPolicy ..> UC_Cancel : <<extend>>
+UC_Share ..> UC_Track : <<extend>>
+UC_SOS ..> UC_Track : <<extend>>
+
+note right of UC_Chain
+  Passenger may book an entire
+  multi-leg journey (tricycle ->
+  UV Express -> e-trike) in one
+  transaction: one fare, one receipt.
+end note
+note right of UC_Pakyawan
+  System auto-matches commuters
+  heading the same direction and
+  splits the fare - formalized
+  "sabit" culture.
+end note
+note bottom of UC_Accred
+  Drivers register with barangay/LGU
+  accreditation; badge shown to
+  passengers before boarding.
+end note
+note bottom of UC_SOS
+  Emergency alert shares live
+  location with trusted contacts
+  and platform safety team.
+end note
+note bottom of UC_BagyoMode
+  <b>Bagyo Mode</b>: while a typhoon
+  or heavy-rain advisory is in force,
+  an LGU-declared multiplier is
+  applied to the computed fare.
+end note
+@enduml

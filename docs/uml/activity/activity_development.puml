@@ -1,0 +1,153 @@
+@startuml activity_development
+' ============================================================
+' Sakay.ph - Activity Diagram (ACTUAL DEVELOPMENT VERSION)
+' Swimlanes, decisions, loops, fork/join, and the
+' Sakay.ph feature branches
+' ============================================================
+skinparam backgroundColor #FFFFFF
+skinparam dpi 150
+skinparam defaultFontName Segoe UI
+skinparam ArrowColor #2D6DA3
+skinparam activity {
+  BackgroundColor #EEF5FB
+  BorderColor #1F4E79
+  FontColor #222222
+  FontSize 12
+  DiamondBackgroundColor #FFF7EC
+  DiamondBorderColor #E67E22
+  DiamondFontColor #7A5217
+  DiamondFontSize 11
+}
+skinparam activityStartColor #1F4E79
+skinparam activityEndColor #1F4E79
+skinparam activityBarColor #1F4E79
+skinparam swimlaneBorderColor #1F4E79
+skinparam swimlaneTitleBackgroundColor #DDEAF5
+skinparam swimlaneTitleFontColor #1F4E79
+skinparam NoteBackgroundColor #FFF7EC
+skinparam NoteBorderColor #E67E22
+
+title <b>Sakay.ph — Activity Diagram (Actual Development)</b>\n<size:12><color:#7A8AA0>Detailed view — swimlanes, decisions, loops, and feature branches</color></size>
+
+|#EEF5FB|Passenger|
+start
+:Log in / verify account;
+:Enter origin & destination;
+:Choose ride mode\n(tricycle, jeep, UV Express,\nhabal-habal, e-trike, car);
+note right
+  <b>Lahat ng Sakyan</b>: the system suggests
+  the best mode, or an <b>Isang Biyahe</b>
+  multi-leg chain (e.g. tricycle ->
+  UV Express -> e-trike), one fare.
+end note
+:Add further legs for an\nIsang Biyahe chain (optional);
+:Request Pakyawan share-ride\n(optional, sets the shared flag);
+:Confirm booking & fare estimate;
+
+|#DDEAF5|Sakay.ph System|
+:Compute fare estimate\n(FareCalculator);
+
+if (Isang Biyahe chain\n(leg_count > 1)?) then (yes)
+  :Sum leg fares into one\ncombined journey fare;
+else (no)
+endif
+
+if (active Bagyo Mode\nsurge window?) then (yes)
+  :Apply the SURGE_PERIOD\nmultiplier to the estimate;
+else (no)
+endif
+
+:Search online accredited\ndrivers within radius;
+
+repeat
+  :Send booking request\n(pickup, drop-off, fare offer);
+  |#EEF5FB|Driver|
+  :Review booking request;
+  |#DDEAF5|Sakay.ph System|
+  :Wait for a reply;
+repeat while (more drivers left\nand time remains?) is (yes) not (no)
+
+if (driver accepted?) then (yes)
+else (no - no driver available)
+  :Notify the passenger:\nno driver available;
+  stop
+endif
+
+if (Pakyawan requested\nand mode is shared?) then (yes)
+  :Group same-direction riders\n(PakyawanGroup);
+  :Compute FareShare\nsplit per passenger;
+else (no)
+endif
+
+:Confirm booking;
+note right
+  <b>Sertipikadong Manong</b>: only LGU/barangay
+  accredited drivers are matched; the badge
+  is shown to the passenger before boarding.
+end note
+
+|#EEF5FB|Passenger|
+:Receive booking confirmation\n(driver, plate number, ETA, badge);
+
+|#DDEAF5|Sakay.ph System|
+if (passenger cancels\nbefore trip start?) then (yes)
+  :Apply cancellation policy\n(fee / refund via wallet);
+  |#EEF5FB|Driver|
+  :Notified of cancellation;
+  |#EEF5FB|Passenger|
+  :Cancellation confirmed;
+  |#DDEAF5|Sakay.ph System|
+  stop
+else (no)
+endif
+
+fork
+  |#DDEAF5|Sakay.ph System|
+  :Start live tracking\n(Saan ang Jeep?);
+fork again
+  |#EEF5FB|Driver|
+  :Proceed to pickup\n& start trip;
+end merge
+
+|#EEF5FB|Passenger|
+if (safety event?) then (yes)
+  :Share trip status /\ntrigger SOS Bantay;
+  |#DDEAF5|Sakay.ph System|
+  :Alert trusted contacts\n+ platform safety team;
+else (no)
+endif
+
+|#EEF5FB|Driver|
+:End trip;
+
+|#DDEAF5|Sakay.ph System|
+:Compute final fare\n(legs, passenger count);
+
+if (payment method?) then (digital)
+  |#E8DAEF|Payment Gateway|
+  :Charge the passenger wallet;
+  :Return a transaction ID\nor a decline reason;
+  |#DDEAF5|Sakay.ph System|
+else (cash)
+  :Record cash payment\n(driver-collected);
+endif
+
+if (payment approved?) then (no)
+  :Retry or ask the passenger\nfor another method;
+  stop
+else (yes)
+endif
+
+if (Pakyawan?) then (yes)
+  :Split fare among\nPakyawan passengers;
+else (no)
+endif
+
+:Credit driver earnings\n(DRIVER_PAYOUT);
+:Issue receipt + journey summary;
+
+|#EEF5FB|Passenger|
+:Rate driver & trip;
+
+stop
+@enduml

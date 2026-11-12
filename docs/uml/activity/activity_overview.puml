@@ -1,0 +1,63 @@
+@startuml activity_overview
+' ============================================================
+' Sakay.ph - Activity Diagram (OVERVIEW VERSION)
+' High-level end-to-end flow: the required core stages
+' ============================================================
+skinparam backgroundColor #FFFFFF
+skinparam dpi 150
+skinparam defaultFontName Segoe UI
+skinparam ArrowColor #2D6DA3
+skinparam activity {
+  BackgroundColor #EEF5FB
+  BorderColor #1F4E79
+  FontColor #222222
+  FontSize 13
+  DiamondBackgroundColor #FFF7EC
+  DiamondBorderColor #E67E22
+  DiamondFontColor #7A5217
+  DiamondFontSize 12
+}
+skinparam activityStartColor #1F4E79
+skinparam activityEndColor #1F4E79
+skinparam activityBarColor #1F4E79
+skinparam NoteBackgroundColor #FFF7EC
+skinparam NoteBorderColor #E67E22
+
+title <b>Sakay.ph — Activity Diagram (Overview)</b>\n<size:12><color:#7A8AA0>High-level view — required core ride-hailing flow</color></size>
+
+start
+
+:Passenger books ride\n(origin, destination, mode);
+
+repeat
+  :System matches nearest\naccredited driver;
+  :Send booking request\nto driver;
+repeat while (more drivers left\nand time remains?) is (yes) not (no)
+
+if (driver accepted?) then (yes)
+else (no - no driver available)
+  :Notify passenger:\nno driver available;
+  stop
+endif
+
+if (passenger cancels\nbefore trip start?) then (yes)
+  :Cancel trip\n(fee / refund applied);
+  stop
+else (no)
+endif
+
+:Driver starts trip;
+
+:Driver ends trip;
+
+:System processes payment\n(GCash / Maya / cash);
+
+:Passenger rates trip;
+
+stop
+
+note right
+  Core flow: Booking -> driver matching ->
+  trip start -> trip end -> payment
+end note
+@enduml

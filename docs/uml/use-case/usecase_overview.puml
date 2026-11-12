@@ -1,0 +1,62 @@
+@startuml usecase_overview
+' ============================================================
+' Sakay.ph - Use Case Diagram (OVERVIEW VERSION)
+' High-level view: actors and the core ride-hailing lifecycle
+' ============================================================
+left to right direction
+skinparam backgroundColor #FFFFFF
+skinparam dpi 150
+skinparam defaultFontName Segoe UI
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #EEF5FB
+  BorderColor #1F4E79
+  ArrowColor #1F4E79
+  FontSize 12
+}
+skinparam rectangle {
+  BorderColor #1F4E79
+  FontSize 14
+}
+skinparam ArrowColor #2D6DA3
+
+title <b>Sakay.ph — Use Case Diagram (Overview)</b>\n<size:12><color:#7A8AA0>High-level view — core ride-hailing lifecycle</color></size>
+
+actor "Passenger" as Passenger
+actor "Driver" as Driver
+actor "System\n(auto-matching & payment)" as System
+
+rectangle "Sakay.ph Ride-Hailing System" as SakaySystem {
+  usecase "Create Account / Log In" as UC0
+  usecase "Book Ride" as UC1
+  usecase "Accept Ride" as UC2
+  usecase "Cancel Trip" as UC3
+  usecase "Start Trip" as UC4
+  usecase "End Trip" as UC4b
+  usecase "Track Ride (Saan ang Jeep?)" as UC5
+  usecase "Process Payment" as UC6
+  usecase "Rate Trip & Driver" as UC7
+}
+
+Passenger --> UC0
+Passenger --> UC1
+Passenger --> UC3
+Passenger --> UC5
+Passenger --> UC7
+
+Driver --> UC0
+Driver --> UC2 : receives booking\nrequest
+Driver --> UC3
+Driver --> UC4
+Driver --> UC4b
+
+System --> UC1 : matches booking to\nnearest accredited driver
+System --> UC6 : processes fare\nautomatically
+
+Passenger --> UC6 : confirms payment\n& receives receipt
+
+note bottom of SakaySystem
+  Core flow: Book Ride -> driver matching -> Trip starts ->
+  Trip ends -> Payment processed
+end note
+@enduml

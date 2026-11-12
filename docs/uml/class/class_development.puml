@@ -1,0 +1,370 @@
+@startuml class_development
+' ============================================================
+' Sakay.ph - Class Diagram (Actual Development)
+' Required minimums: Ride, User, Driver, Location, Payment
+' Extended with Sakay.ph feature classes
+' ============================================================
+skinparam backgroundColor #FFFFFF
+skinparam dpi 150
+skinparam defaultFontName Segoe UI
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #EEF5FB
+  BorderColor #1F4E79
+  ArrowColor #2D6DA3
+  FontSize 12
+  AttributeFontSize 11
+}
+skinparam enum {
+  BackgroundColor #FFF7EC
+  BorderColor #E67E22
+}
+skinparam abstract {
+  BackgroundColor #E4EEF7
+}
+skinparam NoteBackgroundColor #FFF7EC
+skinparam NoteBorderColor #E67E22
+
+title <b>Sakay.ph — Class Diagram (Actual Development)</b>\n<size:12><color:#7A8AA0>Domain model — required concepts plus Sakay.ph feature classes</color></size>
+
+' ============ CORE ACTORS AND DRIVER ASSETS ============
+abstract class User {
+  # userId : String
+  # fullName : String
+  # email : String
+  # phone : String
+  # passwordHash : String
+  # registrationDate : Date
+  + register() : boolean
+  + login(credentials) : Session
+  + logout() : void
+  + updateProfile() : void
+}
+
+class Passenger {
+  - homeAddress : String
+  - preferredModes : List<RideMode>
+  - gcashNumber : String
+  + bookRide(origin, destination, mode) : Ride
+  + bookTripChain(stops) : Ride
+  + cancelTrip(ride) : CancelResult
+  + trackRide(ride) : RideStatus
+  + rateTrip(ride, stars, comment) : Rating
+  + triggerSOS(ride) : SOSAlert
+}
+
+class Driver {
+  - licenseNumber : String
+  - accreditationStatus : AccredStatus
+  - isOnline : boolean
+  - rating : float
+  - totalTrips : int
+  + goOnline() : void
+  + goOffline() : void
+  + respondToRequest(ride, decision) : void
+  + startTrip(ride) : void
+  + endTrip(ride) : void
+  + cancelTrip(ride) : CancelResult
+  + requestPayout() : DriverPayout
+}
+
+class Vehicle {
+  - plateNumber : String
+  - model : String
+  - capacity : int
+  - routeInfo : String
+  + isCompliant() : boolean
+}
+
+class Accreditation {
+  - accreditationId : String
+  - issuingLGU : String
+  - status : AccredStatus
+  - expiryDate : Date
+  - badgeVisible : boolean
+  + validate() : boolean
+  + renew() : void
+}
+
+' ================= RIDE DOMAIN =================
+class Ride {
+  - rideId : String
+  - requestTime : DateTime
+  - status : RideStatus
+  - totalFare : Decimal
+  - isTripChain : boolean
+  + calculateTotalFare() : Decimal
+  + confirm() : void
+  + cancel(reason) : CancelResult
+  + getCurrentLeg() : RideLeg
+}
+
+class RideLeg {
+  - legId : String
+  - sequence : int
+  - mode : RideMode
+  - fare : Decimal
+  - distanceKm : float
+  - etaMinutes : int
+  - status : RideStatus
+  + start() : void
+  + complete() : void
+}
+
+class Location {
+  - latitude : double
+  - longitude : double
+  - address : String
+  - landmark : String
+  + geocode(address) : Coordinates
+  + distanceTo(other) : float
+}
+
+class PakyawanGroup {
+  - groupId : String
+  - direction : String
+  - maxSeats : int
+  - matchedSeats : int
+  + addPassenger(p) : boolean
+  + splitFare(total) : Decimal
+}
+
+class SOSAlert {
+  - alertId : String
+  - timestamp : DateTime
+  - status : SOSStatus
+  - notifiedContacts : List<String>
+  + broadcast() : void
+  + resolve() : void
+}
+
+class Rating {
+  - ratingId : String
+  - stars : int
+  - comment : String
+  - date : Date
+}
+
+class CancelResult {
+  - fee : Decimal
+  - refund : Decimal
+  - reason : String
+}
+
+' ================= PAYMENT DOMAIN =================
+class Payment {
+  - paymentId : String
+  - amount : Decimal
+  - method : PaymentMethod
+  - status : PaymentStatus
+  - timestamp : DateTime
+  + process() : boolean
+  + refund(amount) : boolean
+  + generateReceipt() : Receipt
+}
+
+class FareShare {
+  - shareId : String
+  - passengerCount : int
+  - shareAmount : Decimal
+  - isPaid : boolean
+  + computeSplit(total, pax) : Decimal
+}
+
+class Wallet {
+  - walletId : String
+  - balance : Decimal
+  + topUp(amount) : void
+  + deduct(amount) : boolean
+  + cashOut(amount) : boolean
+}
+
+class Receipt {
+  - receiptNo : String
+  - issuedAt : DateTime
+  + download() : File
+}
+
+class DriverPayout {
+  - payoutId : String
+  - amount : Decimal
+  - method : PaymentMethod
+  - status : PayoutStatus
+  - requestedAt : DateTime
+  - paidAt : DateTime
+  + approve() : boolean
+  + markPaid(gatewayRef) : void
+}
+
+' ============ PRICING AND WEATHER (BAGYO MODE) ============
+class SurgePeriod {
+  - surgeId : String
+  - lguCode : String
+  - label : String
+  - trigger : SurgeTrigger
+  - multiplier : float
+  - startsAt : DateTime
+  - endsAt : DateTime
+  - isActive : boolean
+  + isActiveAt(moment) : boolean
+  + appliesTo(leg) : boolean
+}
+
+' ================= SYSTEM SERVICES =================
+class MatchingEngine {
+  - searchRadiusKm : float
+  + matchDriver(ride) : Driver
+  + matchPakyawanGroup(ride) : PakyawanGroup
+  + suggestModes(origin, destination) : List<RideMode>
+}
+
+class FareCalculator {
+  - baseRates : Map<RideMode, Decimal>
+  - surgeMultiplier : float
+  + computeFare(leg, pax) : Decimal
+  + applyPakyawanSplit(fare, pax) : Decimal
+}
+
+' ================= ENUMS =================
+enum RideMode {
+  TRICYCLE
+  JEEPNEY
+  UV_EXPRESS
+  HABAL_HABAL
+  ETRIKE
+  CAR
+}
+
+enum RideStatus {
+  REQUESTED
+  MATCHED
+  DRIVER_EN_ROUTE
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  GCASH
+  MAYA
+  CASH
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  REFUNDED
+  FAILED
+}
+
+enum AccredStatus {
+  PENDING
+  VERIFIED
+  EXPIRED
+  SUSPENDED
+}
+
+enum SOSStatus {
+  TRIGGERED
+  NOTIFIED
+  RESPONDING
+  RESOLVED
+  CANCELLED
+}
+
+enum PayoutStatus {
+  REQUESTED
+  PROCESSING
+  PAID
+  FAILED
+}
+
+enum SurgeTrigger {
+  WEATHER
+  DEMAND
+  MANUAL
+  LGU_ADVISORY
+}
+
+' ================= RELATIONSHIPS =================
+User <|-- Passenger
+User <|-- Driver
+
+Passenger "1" *-- "0..1" Wallet : owns
+Driver "1" --> "0..1" Vehicle : operates
+Vehicle "0..1" --> "0..*" Ride : assigned to
+Driver "1" --> "0..*" Accreditation : holds\n(LGU-verified)
+
+Passenger "1" --> "0..*" Ride : books
+Driver "1" --> "0..*" Ride : drives
+
+Ride "1" *-- "1..*" RideLeg : consists of\n(Isang Biyahe chain)
+RideLeg "1" --> "1" Location : origin
+RideLeg "1" --> "1" Location : destination
+Ride "1" --> "0..1" PakyawanGroup : matched to\n(share-ride)
+Ride "1" --> "0..1" Payment : paid by
+Payment "1" *-- "0..*" FareShare : split among\nPakyawan pax
+Payment "1" --> "0..1" Receipt : issues
+Payment "0..*" --> "0..1" Wallet : charged to\n(digital only)
+
+Ride "1" --> "0..1" SOSAlert : may raise
+Ride "1" --> "0..*" Rating : receives
+Rating "0..*" --> "1" Passenger : written by
+Rating "0..*" --> "1" Driver : about
+
+Driver "1" --> "0..*" DriverPayout : requests
+RideLeg "0..*" --> "0..1" SurgePeriod : priced under\n(Bagyo Mode)
+
+MatchingEngine ..> Ride : matches
+MatchingEngine ..> Driver : selects
+FareCalculator ..> RideLeg : prices
+FareCalculator ..> SurgePeriod : reads multiplier
+Ride ..> MatchingEngine : requests\nmatching
+
+' ---- type links (class -> enumeration) ----
+Ride ..> RideStatus
+RideLeg ..> RideMode
+Payment ..> PaymentMethod
+Payment ..> PaymentStatus
+Driver ..> AccredStatus
+SOSAlert ..> SOSStatus
+DriverPayout ..> PayoutStatus
+DriverPayout ..> PaymentMethod
+SurgePeriod ..> SurgeTrigger
+
+note bottom of Ride
+  A single-mode ride has 1 RideLeg.
+  An <b>Isang Biyahe</b> trip chain
+  has 2..* legs (e.g. tricycle ->
+  UV Express -> e-trike), one fare
+  and one receipt.
+end note
+
+note bottom of PakyawanGroup
+  <b>Pakyawan</b>: the MatchingEngine
+  groups commuters going the same
+  direction; FareShare divides the
+  fare automatically.
+end note
+
+note bottom of Accreditation
+  <b>Sertipikadong Manong</b>:
+  barangay/LGU accreditation badge
+  shown to passengers before boarding.
+end note
+
+note bottom of SurgePeriod
+  <b>Bagyo Mode</b>: an LGU- or
+  weather-triggered fare multiplier
+  applied per leg while a typhoon or
+  heavy-rain advisory is in force.
+end note
+
+note bottom of DriverPayout
+  <b>Payout Driver Earnings</b>:
+  settled to the driver's GCash/Maya
+  account, kept separate from the
+  passenger wallet ledger.
+end note
+@enduml

@@ -1,0 +1,156 @@
+@startuml sequence_development
+' ============================================================
+' Sakay.ph - Sequence Diagram (ACTUAL DEVELOPMENT VERSION)
+' Detailed interactions incl. alt/opt/loop fragments,
+' backend services, and Sakay.ph feature branches
+' ============================================================
+skinparam backgroundColor #FFFFFF
+skinparam dpi 150
+skinparam defaultFontName Segoe UI
+skinparam sequence {
+  ArrowColor #2D6DA3
+  LifeLineBorderColor #2D6DA3
+  LifeLineBackgroundColor #EEF5FB
+  ParticipantBorderColor #1F4E79
+  ParticipantBackgroundColor #EEF5FB
+  ActorBorderColor #1F4E79
+  ActorBackgroundColor #EEF5FB
+  GroupBorderColor #1F4E79
+  GroupBackgroundColor #DDEAF5
+  DividerBackgroundColor #DDEAF5
+  DividerBorderColor #1F4E79
+}
+skinparam NoteBackgroundColor #FFF7EC
+skinparam NoteBorderColor #E67E22
+
+title <b>Sakay.ph — Sequence Diagram (Actual Development)</b>\n<size:12><color:#7A8AA0>Detailed view — backend services, fragments, and feature branches</color></size>
+
+actor "Passenger" as Passenger
+box "Sakay.ph Backend Services" #F4F8FC
+participant "Sakay.ph App\n(API)" as App
+participant "MatchingEngine" as Matcher
+participant "FareCalculator" as Fare
+end box
+actor "Driver" as Driver
+participant "Payment Gateway\n(GCash / Maya)" as GW
+
+autonumber
+
+== Booking ==
+Passenger -> App : login(credentials)
+activate App
+App -> App : verify identity (OTP / valid ID)
+App --> Passenger : OTP challenge
+Passenger -> App : submitOTP(code)
+alt OTP verified
+  App --> Passenger : session token (verified account)
+else OTP rejected
+  App --> Passenger : login denied\n(retry or re-verify ID)
+end
+deactivate App
+
+Passenger -> App : bookRide(origin, destination, preferredModes)
+activate App
+App -> Fare : estimateFare(mode, distance, pax)
+activate Fare
+opt active surge window (Bagyo Mode)
+  Fare -> Fare : apply SURGE_PERIOD multiplier
+end
+Fare --> App : fare estimate + ETA
+deactivate Fare
+App -> Matcher : matchDriver(ride, searchRadiusKm)
+activate Matcher
+
+== Driver matching ==
+loop until driver accepts or request timeout
+  Matcher -> Driver : push booking request\n(pickup, drop-off, fare offer)
+  activate Driver
+  alt driver accepts
+    Driver --> Matcher : acceptRide()
+  else driver declines
+    Driver --> Matcher : declineRide()
+  end
+  deactivate Driver
+end
+
+opt ride is Pakyawan-eligible\n(RIDE_MODE.is_shared = true)
+  Matcher -> Matcher : group same-direction riders\n(PakyawanGroup)
+  Matcher -> Matcher : compute FareShare per passenger
+  Matcher -> App : PakyawanGroup + FareShare details
+end
+
+alt driver matched
+  Matcher --> App : matched driver\n(plate, rating, LGU badge)
+  App --> Passenger : booking confirmed\n(driver, plate number, ETA, accreditation badge)
+else no driver accepted within timeout
+  Matcher --> App : no driver available
+  App --> Passenger : no driver available\n(retry, widen radius, or change mode)
+end
+deactivate Matcher
+deactivate App
+
+alt passenger cancels before trip start
+  Passenger -> App : cancelTrip(ride)
+  activate App
+  App -> App : apply cancellation policy\n(fee / refund via wallet)
+  App -> Matcher : releaseDriver(ride)
+  App -> Driver : tripCancelled(ride)
+  App --> Passenger : cancellation confirmed
+  deactivate App
+end
+
+== Trip ==
+Driver -> App : startTrip(ride)
+activate App
+App --> Passenger : trip started (live tracking on)
+deactivate App
+
+opt passenger shares trip status
+  Passenger -> App : shareTrip()
+  activate App
+  App -> App : notify trusted contacts\n+ platform safety team
+  deactivate App
+end
+
+opt passenger triggers SOS Bantay
+  Passenger -> App : triggerSOS(ride, location)
+  activate App
+  App -> App : broadcast alert to\ntrusted contacts
+  App --> Passenger : SOS acknowledged\n(safety team responding)
+  deactivate App
+end
+
+Driver -> App : endTrip(ride)
+activate App
+App -> Fare : computeFinalFare(legs, paxCount)
+activate Fare
+Fare --> App : total fare (incl. Pakyawan split)
+deactivate Fare
+App --> Passenger : trip completed + fare summary
+deactivate App
+
+== Payment ==
+activate App
+alt digital payment (GCash / Maya)
+  App -> GW : chargeWallet(amount, passengerWallet)
+  activate GW
+  GW --> App : payment success (transaction ID)
+  deactivate GW
+else cash payment
+  App -> App : record cash payment\n(driver-collected)
+end
+
+alt payout through GCash / Maya
+  App -> GW : payoutDriver(driverId, earnings)
+  activate GW
+  GW --> App : payout confirmed (DRIVER_PAYOUT)
+  deactivate GW
+else cash trip (driver already holds the fare)
+  App -> App : record DRIVER_PAYOUT as settled\n(no gateway transfer)
+end
+
+App --> Passenger : receipt + journey summary\n(Isang Biyahe legs, if any)
+Passenger -> App : rateTrip(ride, stars, comment)
+App -> App : update driver rating history
+deactivate App
+@enduml

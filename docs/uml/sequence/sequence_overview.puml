@@ -1,0 +1,67 @@
+@startuml sequence_overview
+' ============================================================
+' Sakay.ph - Sequence Diagram (OVERVIEW VERSION)
+' Required core flow: Booking -> driver matching ->
+' trip start -> trip end -> payment
+' ============================================================
+skinparam backgroundColor #FFFFFF
+skinparam dpi 150
+skinparam defaultFontName Segoe UI
+skinparam sequence {
+  ArrowColor #2D6DA3
+  LifeLineBorderColor #2D6DA3
+  LifeLineBackgroundColor #EEF5FB
+  ParticipantBorderColor #1F4E79
+  ParticipantBackgroundColor #EEF5FB
+  ActorBorderColor #1F4E79
+  ActorBackgroundColor #EEF5FB
+  GroupBorderColor #1F4E79
+  GroupBackgroundColor #DDEAF5
+  DividerBackgroundColor #DDEAF5
+  DividerBorderColor #1F4E79
+}
+skinparam NoteBackgroundColor #FFF7EC
+skinparam NoteBorderColor #E67E22
+
+title <b>Sakay.ph — Sequence Diagram (Overview)</b>\n<size:12><color:#7A8AA0>High-level view — required core ride-hailing flow</color></size>
+
+actor "Passenger" as Passenger
+participant "Sakay.ph\nSystem" as System
+actor "Driver" as Driver
+participant "Payment Gateway\n(GCash / Maya)" as GW
+
+note over Passenger, Driver
+  Core flow: Booking -> driver matching ->
+  trip start -> trip end -> payment
+end note
+
+== Booking ==
+Passenger -> System : Book ride\n(origin, destination, mode)
+System --> Passenger : Fare estimate + ETA
+
+== Driver Matching ==
+System -> System : Match nearest\naccredited driver
+System -> Driver : Send booking request
+alt driver accepts
+  Driver --> System : Accept ride
+  System --> Passenger : Booking confirmed\n(driver, plate number, ETA)
+else driver declines or does not reply
+  System --> Passenger : No driver available\n(retry or widen the search)
+end
+
+opt passenger cancels before trip start
+  Passenger -> System : Cancel trip
+  System --> Passenger : Cancellation confirmed\n(fee / refund applied)
+end
+
+== Trip ==
+Driver -> System : Start trip
+Driver -> System : End trip
+System --> Passenger : Trip completed\n(fare summary)
+
+== Payment ==
+Passenger -> System : Pay fare\n(GCash / Maya / cash)
+System -> GW : Charge passenger\nand pay out driver earnings
+GW --> System : Transaction confirmed
+System --> Passenger : Payment confirmed\n+ receipt
+@enduml
