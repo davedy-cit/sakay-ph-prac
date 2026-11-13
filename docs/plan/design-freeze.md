@@ -15,24 +15,25 @@
 
 | Artefact | Version | Frozen at commit |
 |---|---|---|
-| `docs/proposal/Sakay.ph_Project_Concept.docx` | Part 1 — project concept | |
-| `docs/proposal/Sakay.ph_Proposal.pptx` | Proposal deck | |
-| `docs/proposal/technology_stack.md` | complete (Step 0.01) — §1–§7 | |
-| `docs/uml/use-case/usecase_development.puml` | 27 use cases, 5 actors | |
-| `docs/uml/class/class_development.puml` | 20 classes, 8 enums | |
-| `docs/uml/sequence/sequence_development.puml` | interaction per feature | |
-| `docs/uml/activity/activity_development.puml` | swimlane process flow | |
-| `docs/uml/*/*_overview.puml` | 4 simplified overview diagrams | |
-| `database/diagrams/eer_development.puml` | 26 tables as drawn — **table 27 lands in Phase 2** | |
-| `database/diagrams/eer_core.puml`, `eer_features.puml` | the same EER in two parts | |
-| `database/diagrams/er_overview.puml` | simplified crow's-foot ER | |
-| `database/schema_listing.md` | 26 tables, 13 domains — **gains table 27 in Phase 2** | |
-| `database/consistency_report.md` | 61 defects fixed + D-62 + D-63 | |
-| `docs/mockups/mock1_home.png` … `mock4_driver.png` | 4 screens | |
+| `docs/proposal/Sakay.ph_Project_Concept.docx` | Part 1 — project concept |38bd60e |
+| `docs/proposal/Sakay.ph_Proposal.pptx` | Proposal deck | 38bd60e|
+| `docs/proposal/technology_stack.md` | complete (Step 0.01) — §1–§7 | 38bd60e|
+| `docs/uml/use-case/usecase_development.puml` | 27 use cases, 5 actors |03f344f |
+| `docs/uml/class/class_development.puml` | 20 classes, 8 enums | 03f344f|
+| `docs/uml/sequence/sequence_development.puml` | interaction per feature |03f344f |
+| `docs/uml/activity/activity_development.puml` | swimlane process flow |03f344f |
+| `docs/uml/*/*_overview.puml` | 4 simplified overview diagrams |03f344f |
+| `database/diagrams/eer_development.puml` | 26 tables as drawn — **table 27 lands in Phase 2** |2ecf717 |
+| `database/diagrams/eer_core.puml`, `eer_features.puml` | the same EER in two parts |2ecf717 |
+| `database/diagrams/er_overview.puml` | simplified crow's-foot ER | 2ecf717|
+| `database/schema_listing.md` | 26 tables, 13 domains — **gains table 27 in Phase 2** | 2ecf717|
+| `database/consistency_report.md` | 61 defects fixed + D-62 + D-63 | 2ecf717|
+| `docs/mockups/mock1_home.png` … `mock4_driver.png` | 4 screens | 	32817d4|
 
-**The commit column is intentionally empty.** It is filled on **Day 6**, immediately
-after the first push in Phase 1. An empty commit column after Day 7 means the freeze is
-not finished — a baseline you cannot point at a commit for is not a baseline.
+**The commit column points at the commit that introduced each artefact.** The design was
+frozen on 11 November 2026, before git existed in this project; the first push on
+13 November 2026 gave the baseline the commits it needed. `f7fe035` is the initial commit.
+
 
 ---
 
