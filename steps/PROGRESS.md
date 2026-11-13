@@ -51,12 +51,27 @@
 | ✅ | [03 — Design freeze check](phase-0-design-completion/03-design-freeze-check.md) | 5 | `[x]` |
 
 **Phase 0 complete 11 Nov.** The design is frozen at
-[`docs/plan/design-freeze.md`](../docs/plan/design-freeze.md). Its commit column is still
-empty — it is filled on Day 6, after the first push.
+[`docs/plan/design-freeze.md`](../docs/plan/design-freeze.md). Its commit column is filled on 13 Nov — every artefact points at the commit that introduced it.
 
 **Milestone M1 exit criterion (shared with Phase 1):** a stranger can clone the repo,
 read the README, and understand the project without asking you anything. The README is
 written; the *clone* half needs Phase 1.
+
+### Day 6 — Wed 11 Nov (executed 13 Nov)
+
+**Steps 1.01–1.04 — repository created and pushed — DONE**
+
+- `git init` on `main`; `backend/`, `frontend/`, `tools/` created with `.gitkeep`
+- `.gitignore` written **before** any `.env` existed; `git check-ignore -v .env`
+  confirms `.gitignore:5:.env` matches. `.env` has never been tracked
+- GitHub repo `sakay-ph-prac` created; remote `origin` added
+- Design phase pushed as 8 focused commits, not one blob:
+  `f7fe035` repo · `38bd60e` proposal+stack · `03f344f` UML · `2ecf717` database ·
+  `32817d4` mockups · `868e43b` plan+review+steps · `9452a22` README ·
+  `14812c1` build folders + editor settings
+- Freeze commit column filled — each of the 14 artefacts points at its introducing commit
+- **First commit:** `f7fe035` · **Head:** `14812c1`
+
 
 ---
 
@@ -64,11 +79,11 @@ written; the *clone* half needs Phase 1.
 
 | | Step | Day | Status |
 |---|---|---|---|
-| ⬜ | [00 — Phase overview](phase-1-repository/00-overview.md) | 6 | `[ ]` |
-| ⬜ | [01 — Initialise git and the folder structure](phase-1-repository/01-git-init-and-structure.md) | 6 | `[ ]` |
-| ⬜ | [02 — Write `.gitignore` and `.env.example`](phase-1-repository/02-gitignore-and-env-example.md) | 6 | `[ ]` |
-| ⬜ | [03 — Create the GitHub repository](phase-1-repository/03-github-repo.md) | 6 | `[ ]` |
-| ⬜ | [04 — First push](phase-1-repository/04-first-push.md) | 6 | `[ ]` |
+| ✅ | [00 — Phase overview](phase-1-repository/00-overview.md) | 6 | `[ ]` |
+| ✅ | [01 — Initialise git and the folder structure](phase-1-repository/01-git-init-and-structure.md) | 6 | `[ ]` |
+| ✅ | [02 — Write `.gitignore` and `.env.example`](phase-1-repository/02-gitignore-and-env-example.md) | 6 | `[ ]` |
+| ✅ | [03 — Create the GitHub repository](phase-1-repository/03-github-repo.md) | 6 | `[ ]` |
+| ✅ | [04 — First push](phase-1-repository/04-first-push.md) | 6 | `[ ]` |
 | ⬜ | [05 — Workflow conventions](phase-1-repository/05-workflow-conventions.md) | 7 | `[ ]` |
 | ⬜ | [06 — Scaffold Django and Vue, prove the environment](phase-1-repository/06-scaffold-and-verify.md) | 7 | `[ ]` |
 
