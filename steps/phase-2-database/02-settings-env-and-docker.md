@@ -92,7 +92,9 @@ env = environ.Env(
     DJANGO_DEBUG=(bool, False),
     DJANGO_ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
     DJANGO_TIME_ZONE=(str, "Asia/Manila"),
-    MYSQL_PORT=(int, 3306),
+    # Host port published by docker-compose.yml (3307:3306) — a native MySQL 8.4
+    # service already owns host port 3306 on the development machine.
+    MYSQL_PORT=(int, 3307),
     SIMULATE_PAYMENTS=(bool, True),
     SIMULATE_OTP=(bool, True),
     OTP_TTL_SECONDS=(int, 300),

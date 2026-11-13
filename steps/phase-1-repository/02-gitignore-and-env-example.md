@@ -121,7 +121,10 @@ MYSQL_USER=sakayph
 MYSQL_PASSWORD=replace-me
 MYSQL_ROOT_PASSWORD=replace-me-too
 MYSQL_HOST=127.0.0.1
-MYSQL_PORT=3306
+# Host port for the Docker MySQL container. docker-compose.yml maps 3307:3306
+# because a native MySQL 8.4 service already owns host port 3306 on the
+# development machine. Both files must agree, or a fresh clone cannot connect.
+MYSQL_PORT=3307
 
 # ── Redis (via Docker Compose) ─────────────────────────────────
 # db 0 = Django Channels channel layer

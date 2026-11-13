@@ -134,7 +134,7 @@ Each has a date because an open question without one is a question that stays op
 - [ ] The decision log in `steps/PROGRESS.md` is current
 - [ ] No open question lacks a "decide by" date
 - [ ] `README.md` exists at the project root and reflects this freeze
-- [ ] The commit column above is filled in — **Day 6, after the first push**
+- [x] The commit column above is filled in — **13 Nov, after the first push**
 
 ---
 

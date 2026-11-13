@@ -113,7 +113,9 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-sakayph}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpw}
     ports:
-      - "3306:3306"
+      # Host 3307 → container 3306. A native MySQL 8.4 service owns host 3306
+      # on this machine, so the container is published on 3307 instead.
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     command:
@@ -158,10 +160,12 @@ Compose reads `.env` automatically from the same folder, so `MYSQL_PASSWORD` com
 from your real `.env` — the `:-sakayph` defaults are only a fallback for a fresh
 clone that has no `.env` yet.
 
-**Port conflict check.** If you already run MySQL (XAMPP, a native install) or
-Redis on this machine, port 3306 or 6379 is taken and `up` will fail with
-*"port is already allocated"*. Either stop the other service, or change the
-left-hand side of the mapping (`"3307:3306"`) and update `MYSQL_PORT` in `.env`.
+**Port conflict check.** This machine already runs a native MySQL 8.4 service
+(`MySQL84`) on port 3306, so the mapping above publishes the container on **3307**,
+and `.env` and `.env.example` both carry `MYSQL_PORT=3307`. If `up` still fails with
+*"port is already allocated"*, confirm with
+`Get-NetTCPConnection -LocalPort 3307 -State Listen` and remap to `"3308:3306"` —
+changing `MYSQL_PORT` in **both** env files to match.
 
 ### 3. Start the services and prove they are healthy (~15 min)
 
@@ -549,7 +553,7 @@ Then:
 |---|---|---|
 | `docker: command not found` | Docker Desktop not installed | `winget install --id Docker.DockerDesktop`, then reboot |
 | `error during connect` / `cannot connect to the Docker daemon` | Docker Desktop installed but not started | Launch Docker Desktop, wait for the whale to settle |
-| `port is already allocated` | XAMPP or a native MySQL/Redis is using 3306/6379 | Stop the other service, or remap to `3307:3306` and update `MYSQL_PORT` |
+| `port is already allocated` | A native MySQL/Redis already owns 3307 or 6379 | Confirm with `Get-NetTCPConnection -LocalPort 3307,6379 -State Listen`, then remap to `3308:3306` and update `MYSQL_PORT` in **both** `.env` and `.env.example` |
 | `character_set_server` is `latin1` | Volume predates the `command:` block | `docker compose down -v` (wipes data), then `up -d` |
 | `No matching distribution found for <pkg>==<ver>` | A pin in the stack doc was wrong | Install unpinned, `pip freeze`, re-pin to what resolved. **Record it** — this is a real finding |
 | `error: can't find Rust compiler` | `cryptography` has no Python 3.14 wheel | `pip install --only-binary=:all: "PyMySQL[rsa]"`, or `winget install Rustlang.Rustup` |

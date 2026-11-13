@@ -14,12 +14,12 @@
 
 > ### Where I am right now
 >
-> **Next action:** **Day 6 — create the repository.** Phase 0 is complete: the design is
-> frozen and both Phase 0 documents are written. Start at
-> [Phase 1 — Repository](phase-1-repository/00-overview.md), and put the commit SHAs into
-> the freeze table as soon as the first push succeeds.
+> **Next action:** **Step 1.06 — scaffold Django and Vue, prove the environment.**
+> Phase 1 Steps 1.01–1.05 are done and pushed. Docker Desktop is installed and its daemon
+> is running on the WSL 2 kernel. Start at
+> [Step 06](phase-1-repository/06-scaffold-and-verify.md).
 >
-> **Verified state of the repository (checked 11 Nov):**
+> **Verified state of the repository (checked 13 Nov):**
 >
 > | Check | Actual |
 > |---|---|
@@ -28,14 +28,16 @@
 > | D-62 propagation | ✅ done — 27 tables in every forward-looking document; historical rows left at 26 on purpose; the wrong `Step 02.04` cross-reference corrected to `02.03` |
 > | `schema_listing.md` | exists, **26 tables** — carries the "Pending: table 27 (D-62)" callout and the `CHAR(32)` UUID note (D-63); gains table 27 and `RIDE_MODE.booking_fee` in Phase 2 |
 > | Root `README.md` | ✅ **written** — Step 0.02 |
-> | `docs/plan/design-freeze.md` | ✅ **written** — Step 0.03; 13 limitations, 3 open questions |
-> | Git repository | **not initialised** — Phase 1 |
-> | `backend/`, `frontend/`, `docker-compose.yml` | **missing** — Phase 1 |
-> | Docker Desktop | **not installed** — Phase 1, Step 06 |
+> | `docs/plan/design-freeze.md` | ✅ **written** — Step 0.03; 13 limitations, 3 open questions; commit column **filled 13 Nov**, every artefact pointing at the commit that introduced it |
+> | Git repository | ✅ **live** — `davedy-cit/sakay-ph-prac`, branch `main`, pushed |
+> | `CONTRIBUTING.md` | ✅ **written** — Step 1.05, commit `cfa6e7f` |
+> | `backend/`, `frontend/`, `tools/` | exist with `.gitkeep` placeholders — filled by Step 1.06 |
+> | `docker-compose.yml`, `requirements/`, `.venv/` | **missing** — Step 1.06 |
+> | Docker Desktop | ✅ **installed and running** — server 29.9.3, Compose v5.7.0, WSL 2 kernel 6.18.58.1 |
+> | Docker MySQL host port | **3307** — a native `MySQL84` service owns 3306, so `docker-compose.yml` maps `3307:3306` |
 >
-> **Phase 0 is complete. Days 1–4 were already done, and Day 5 is now closed too.**
-> You are still one day behind on the calendar: Day 6 (repository) has not started.
-> The freeze's commit column is empty on purpose — it is filled after the first push.
+> **Phase 0 is complete, and Phase 1 is five-sixths done.** Steps 1.01–1.05 are pushed.
+> Only Step 1.06 — the scaffold and the environment proof — remains.
 
 ---
 
@@ -79,12 +81,12 @@ written; the *clone* half needs Phase 1.
 
 | | Step | Day | Status |
 |---|---|---|---|
-| ✅ | [00 — Phase overview](phase-1-repository/00-overview.md) | 6 | `[ ]` |
-| ✅ | [01 — Initialise git and the folder structure](phase-1-repository/01-git-init-and-structure.md) | 6 | `[ ]` |
-| ✅ | [02 — Write `.gitignore` and `.env.example`](phase-1-repository/02-gitignore-and-env-example.md) | 6 | `[ ]` |
-| ✅ | [03 — Create the GitHub repository](phase-1-repository/03-github-repo.md) | 6 | `[ ]` |
-| ✅ | [04 — First push](phase-1-repository/04-first-push.md) | 6 | `[ ]` |
-| ⬜ | [05 — Workflow conventions](phase-1-repository/05-workflow-conventions.md) | 7 | `[ ]` |
+| ✅ | [00 — Phase overview](phase-1-repository/00-overview.md) | 6 | `[x]` |
+| ✅ | [01 — Initialise git and the folder structure](phase-1-repository/01-git-init-and-structure.md) | 6 | `[x]` |
+| ✅ | [02 — Write `.gitignore` and `.env.example`](phase-1-repository/02-gitignore-and-env-example.md) | 6 | `[x]` |
+| ✅ | [03 — Create the GitHub repository](phase-1-repository/03-github-repo.md) | 6 | `[x]` |
+| ✅ | [04 — First push](phase-1-repository/04-first-push.md) | 6 | `[x]` |
+| ✅ | [05 — Workflow conventions](phase-1-repository/05-workflow-conventions.md) | 7 | `[x]` |
 | ⬜ | [06 — Scaffold Django and Vue, prove the environment](phase-1-repository/06-scaffold-and-verify.md) | 7 | `[ ]` |
 
 ---
@@ -354,7 +356,7 @@ you, a version that turned out not to exist, a design assumption that broke.
     roadmap risk register R7, audit A-13, and two places in `PROGRESS.md`
   - Un-gated the `booking_fee` block in Step 02.03: it was commented out behind "only if
     you took the A-13 recommendation", which is no longer a condition
-- **Commit:** *(pending — repository is not initialised yet; this lands in the first push)*
+- **Commit:** `38bd60e` (stack), `2ecf717` (database), `868e43b` (steps) — Day 6 first push
 
 > **Note:** the design now has **27 tables**, not 26. `schema_listing.md` gains
 > `PLATFORM_CONFIG` and `RIDE_MODE.booking_fee` in Phase 2, Steps 02.01 and 02.03, before
@@ -375,7 +377,7 @@ you, a version that turned out not to exist, a design assumption that broke.
   which is why `PROGRESS.md` lives there
 - "Running it" left as an honest placeholder until Phase 1. A README claiming a setup
   procedure that does not exist is worse than one that admits the current state
-- **Commit:** *(pending — repository is not initialised yet; this lands in the first push)*
+- **Commit:** `9452a22` — Day 6 first push
 
 **Step 0.03 — design freeze — DONE**
 
@@ -402,12 +404,8 @@ you, a version that turned out not to exist, a design assumption that broke.
     freeze lists 13 limitations rather than 14 with one counted twice
 - Dated the freeze **11 November**, not 10 — it is Day 5 work executed on Day 6, and the
   document says so rather than backdating itself
-- **Commit column left empty on purpose.** It is filled on Day 6 immediately after the
-  first push; the freeze document states that an empty column after Day 7 means the freeze
-  is unfinished
+- **Commit column filled 13 Nov**, immediately after the first push. Each artefact now
+  points at the commit that introduced it: `38bd60e` proposal/stack, `03f344f` UML,
+  `2ecf717` database, `32817d4` mockups, `868e43b` plan/review/steps, `9452a22` README
 - **Phase 0 complete.** The design does not change again without a D-number
-- **Commit:** *(pending — repository is not initialised yet; this lands in the first push)*
-
-### Day 6 — Wed 11 Nov
-
-*(not started — repository creation is the next action)*
+- **Commit:** `868e43b` — Day 6 first push
