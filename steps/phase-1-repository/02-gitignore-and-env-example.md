@@ -118,6 +118,12 @@ DJANGO_TIME_ZONE=Asia/Manila
 # ── Database (MySQL 8.4, via Docker Compose) ───────────────────
 MYSQL_DATABASE=sakayph
 MYSQL_USER=sakayph
+# Do NOT put a `$` in either password. Docker Compose interpolates `$name`
+# inside .env values and substitutes an empty string, while Django reads the
+# file literally. The container and the app then hold different passwords and
+# every connection fails with `Access denied for user` — an error that points
+# at the app, not at the password. Compose also warns `The "xyz" variable is
+# not set`, which is easy to learn to ignore. Use alphanumerics only.
 MYSQL_PASSWORD=replace-me
 MYSQL_ROOT_PASSWORD=replace-me-too
 MYSQL_HOST=127.0.0.1
@@ -214,6 +220,8 @@ Expected: a line naming the `.gitignore` pattern that matched. If it prints noth
 | `.env.example` is ignored too | `.env.*` is catching it | The `!.env.example` negation must come **after** `.env.*` — order matters in `.gitignore` |
 | Already committed `.env` | You committed before writing the ignore | `git rm --cached .env`, then commit. **Also rotate the password** — it is in the history |
 | `node_modules` shows as untracked | Pattern not applied | Confirm `.gitignore` is at the repository root, not inside `frontend/` |
+| `Access denied for user 'sakayph'` although `.env` looks correct | `$` in `MYSQL_PASSWORD` — Compose interpolated it away, Django did not | Remove the `$`, then `docker compose down -v` and `docker compose up -d`. The user is created only when the data directory is empty, so editing `.env` alone is not enough |
+| `The "xyz" variable is not set` warning on every compose command | Same cause: a `$` in some `.env` value | `docker compose config --format json` and compare a value's length against the raw `.env` line |
 
 ---
 
