@@ -584,7 +584,11 @@ python manage.py migrate
 Then look at what Django actually built:
 
 ```powershell
-docker compose exec mysql mysql -u sakayph -psakayph sakayph -e "SHOW TABLES;"
+# Read the password from .env — never hardcode it in a step file. Step 1.06 had to
+# regenerate MYSQL_PASSWORD (the `$` interpolation defect), so any literal password
+# written down here is stale.
+$pw = (Select-String -Path ..\.env -Pattern '^MYSQL_PASSWORD=').Line.Split('=', 2)[1]
+docker compose exec mysql mysql -u sakayph "-p$pw" sakayph -e "SHOW TABLES;"
 ```
 
 Expected, from this step:
@@ -604,7 +608,8 @@ Confirm the inheritance is what the schema describes — `PASSENGER.passenger_id
 be a primary key that is also a foreign key:
 
 ```powershell
-docker compose exec mysql mysql -u sakayph -psakayph sakayph -e "SHOW CREATE TABLE PASSENGER\G"
+$pw = (Select-String -Path ..\.env -Pattern '^MYSQL_PASSWORD=').Line.Split('=', 2)[1]
+docker compose exec mysql mysql -u sakayph "-p$pw" sakayph -e "SHOW CREATE TABLE PASSENGER\G"
 ```
 
 Look for `PRIMARY KEY (passenger_id)` and a `FOREIGN KEY (passenger_id) REFERENCES USER (id)`.
@@ -666,9 +671,11 @@ git push
 ## Verify
 
 ```powershell
+Set-Location backend      # §8 left you at the repository root
 python manage.py check
 python manage.py showmigrations accounts
-docker compose exec mysql mysql -u sakayph -psakayph sakayph -e "SHOW TABLES;"
+$pw = (Select-String -Path ..\.env -Pattern '^MYSQL_PASSWORD=').Line.Split('=', 2)[1]
+docker compose exec mysql mysql -u sakayph "-p$pw" sakayph -e "SHOW TABLES;"
 ```
 
 - [ ] The design change was recorded **before** the model was written
