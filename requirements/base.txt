@@ -1,0 +1,26 @@
+# ── Sakay.ph runtime dependencies ──────────────────────────────
+# Pinned exactly. A capstone graded on reproducibility should
+# install the same versions on the assessor's machine.
+
+# ── Core ───────────────────────────────────────────────────────
+Django==6.1.3
+djangorestframework==3.18.3
+djangorestframework-simplejwt==5.5.1
+django-cors-headers==4.9.0
+drf-spectacular==0.30.0
+django-environ==0.14.0
+
+# ── Database ───────────────────────────────────────────────────
+# PyMySQL rather than mysqlclient: pure Python, no C compiler or
+# MySQL client libraries needed on Windows. The [rsa] extra adds
+# the auth plugin MySQL 8.4 requires.
+PyMySQL[rsa]==1.2.3
+
+# ── Real-time ──────────────────────────────────────────────────
+channels==4.3.2
+channels-redis==4.3.0
+django-redis==6.0.0
+daphne==4.2.1
+
+# ── Geospatial ─────────────────────────────────────────────────
+geopy==2.4.1

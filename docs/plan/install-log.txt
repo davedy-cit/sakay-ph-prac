@@ -1,0 +1,296 @@
+﻿================================================================================
+Sakay.ph — Phase 1 install log
+Recorded 13 November 2026 (Day 6, Step 1.06)
+================================================================================
+
+This file is the raw evidence for `docs/proposal/technology_stack.md` §7. The pip
+output below is verbatim and unedited; this header records what produced it and the
+deviations found along the way.
+
+── Toolchain ───────────────────────────────────────────────────────────────────
+
+    Python            3.14.9
+    pip               26.3   (upgraded from 26.2.2 — see the first line below)
+    Node.js           24.22.1
+    npm               11.19.1
+    Git               2.56.0.windows.1
+    Java              22.0.1
+    Docker            29.9.3 (WSL 2 backend, kernel 6.18.58.1)
+    Docker Compose    v5.7.0
+
+── Backend install ─────────────────────────────────────────────────────────────
+
+    .\.venv\Scripts\python -m pip install --upgrade pip
+    .\.venv\Scripts\python -m pip install -r requirements\dev.txt
+
+    56 packages installed, exit code 0, no compiler invoked.
+    Every direct pin in requirements/base.txt and requirements/dev.txt resolved to
+    exactly the pinned version. The full `Successfully installed` line is the last
+    line of the pip output below.
+
+    cryptography 50.0.2 arrived as a prebuilt cp311-abi3 wheel. This plan had flagged
+    that it might need a Rust toolchain on Python 3.14 — it did not.
+
+── Frontend install ────────────────────────────────────────────────────────────
+
+    npm install                                 337 packages
+    npm install axios leaflet                   +26
+    npm install -D tailwindcss @tailwindcss/vite +17
+                                                ----
+                                                380 packages
+
+    npm audit: 10 moderate advisories, all dev-only, reached through @vue/test-utils
+    and eslint. Nothing in vue, pinia, vue-router, axios or leaflet is implicated.
+    `npm audit fix --force` was NOT run — it "resolves" them by downgrading
+    @vue/test-utils and eslint. Known limitation, recorded in stack doc §7.
+
+    Resolved versions of note:
+        vue 3.5.45 · vue-router 5.5.0 · pinia 4.1.0 · vite 8.3.8
+        tailwindcss 4.3.5 · axios 1.21.1 · leaflet 1.9.4
+
+    Vue Router 5 and Pinia 4 both exist. The doubt recorded in stack doc §7 — that
+    the pins might name majors that do not exist — is settled in the project's favour.
+
+── Services proof ──────────────────────────────────────────────────────────────
+
+    docker compose ps      → mysql and redis both healthy
+    MySQL 8.4              → character_set_server = utf8mb4
+                             collation_server     = utf8mb4_unicode_ci
+    Redis 7-alpine         → redis-cli ping      = PONG
+
+    utf8mb4 is mandatory, not cosmetic: the schema stores Tagalog place names with
+    `ñ` and emoji mode icons. A 3-byte `utf8` column would reject both.
+
+── Deviations from the plan ────────────────────────────────────────────────────
+
+ 1. MySQL is published on HOST PORT 3307, not 3306.
+    A native `MySQL84` service already owns 3306 on this machine, so
+    docker-compose.yml maps `3307:3306`. `MYSQL_PORT` in `.env` and `.env.example`
+    must match the left-hand number. A fresh clone that assumes 3306 will fail.
+
+ 2. Docker 29.9.3 and Compose v5.7.0 are newer than the versions this plan assumed.
+    No behavioural difference for this stack. Recorded because the plan named
+    versions and they no longer match.
+
+ 3. DEFECT, found and fixed: a `$` in `MYSQL_PASSWORD` broke every DB connection.
+    Docker Compose interpolates `$name` inside `.env` values and substitutes an empty
+    string; django-environ reads the file literally. Container and app therefore held
+    DIFFERENT passwords, and the failure surfaced as
+    `ERROR 1045 (28000): Access denied for user 'sakayph'@'localhost'` — an error that
+    points at the app rather than at the password.
+
+    Proven before fixing:
+        length in .env          50
+        length Compose passes   47
+        identical               False
+
+    Fixed by regenerating the password as 32 alphanumerics, then
+    `docker compose down -v` and `docker compose up -d`. The `down -v` is required:
+    the MySQL entrypoint issues CREATE USER only when the data directory is empty, so
+    editing `.env` alone leaves the old password in place and makes the fix look
+    ineffective. Verified afterwards: `identical: True`, app user connects.
+
+    The same defect produced a `The "xyz" variable is not set` warning on every compose
+    command — easy to learn to ignore, which is why it is documented in `.env.example`
+    and in the Step 1.02 troubleshooting table.
+
+ 4. Vite binds to IPv6 loopback only.
+    `http://localhost:5173/` and `http://[::1]:5173/` return HTTP 200;
+    `http://127.0.0.1:5173/` does not respond. Both servers were confirmed listening at
+    the same moment. Open the app at `http://localhost:5173`, not the 127.0.0.1 form,
+    when Phase 4 begins.
+
+ 5. Graphviz `dot` was not on PATH at this check, and the PlantUML jar was not found in
+    the repository. Java 22.0.1 is present. The 13 diagrams render today, so the
+    toolchain worked at some point — but confirm `dot` is reachable before the next
+    re-render, since the class and component diagrams need Graphviz layout.
+
+── Raw pip output below ────────────────────────────────────────────────────────
+================================================================================
+
+Requirement already satisfied: pip in .\.venv\Lib\site-packages (26.2.2)
+Collecting pip
+  Using cached pip-26.3-py3-none-any.whl.metadata (4.6 kB)
+Using cached pip-26.3-py3-none-any.whl (2.0 MB)
+Installing collected packages: pip
+  Attempting uninstall: pip
+    Found existing installation: pip 26.2.2
+    Uninstalling pip-26.2.2:
+      Successfully uninstalled pip-26.2.2
+Successfully installed pip-26.3
+Collecting Django==6.1.3 (from -r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 6))
+  Using cached django-6.1.3-py3-none-any.whl.metadata (3.9 kB)
+Collecting djangorestframework==3.18.3 (from -r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 7))
+  Using cached djangorestframework-3.18.3-py3-none-any.whl.metadata (7.8 kB)
+Collecting djangorestframework-simplejwt==5.5.1 (from -r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 8))
+  Using cached djangorestframework_simplejwt-5.5.1-py3-none-any.whl.metadata (4.6 kB)
+Collecting django-cors-headers==4.9.0 (from -r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 9))
+  Using cached django_cors_headers-4.9.0-py3-none-any.whl.metadata (16 kB)
+Collecting drf-spectacular==0.30.0 (from -r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 10))
+  Using cached drf_spectacular-0.30.0-py3-none-any.whl.metadata (14 kB)
+Collecting django-environ==0.14.0 (from -r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 11))
+  Using cached django_environ-0.14.0-py3-none-any.whl.metadata (12 kB)
+Collecting PyMySQL==1.2.3 (from PyMySQL[rsa]==1.2.3->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 17))
+  Using cached pymysql-1.2.3-py3-none-any.whl.metadata (4.2 kB)
+Collecting channels==4.3.2 (from -r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 20))
+  Using cached channels-4.3.2-py3-none-any.whl.metadata (4.7 kB)
+Collecting channels-redis==4.3.0 (from -r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 21))
+  Using cached channels_redis-4.3.0-py3-none-any.whl.metadata (13 kB)
+Collecting django-redis==6.0.0 (from -r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 22))
+  Downloading django_redis-6.0.0-py3-none-any.whl.metadata (32 kB)
+Collecting daphne==4.2.1 (from -r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 23))
+  Downloading daphne-4.2.1-py3-none-any.whl.metadata (1.7 kB)
+Collecting geopy==2.4.1 (from -r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 26))
+  Downloading geopy-2.4.1-py3-none-any.whl.metadata (6.8 kB)
+Collecting pytest==9.0.1 (from -r requirements\dev.txt (line 4))
+  Downloading pytest-9.0.1-py3-none-any.whl.metadata (7.6 kB)
+Collecting pytest-django==4.12.0 (from -r requirements\dev.txt (line 5))
+  Downloading pytest_django-4.12.0-py3-none-any.whl.metadata (8.0 kB)
+Collecting pytest-cov==7.1.0 (from -r requirements\dev.txt (line 6))
+  Downloading pytest_cov-7.1.0-py3-none-any.whl.metadata (32 kB)
+Collecting factory-boy==3.3.3 (from -r requirements\dev.txt (line 7))
+  Downloading factory_boy-3.3.3-py2.py3-none-any.whl.metadata (15 kB)
+Collecting ruff==0.15.1 (from -r requirements\dev.txt (line 8))
+  Downloading ruff-0.15.1-py3-none-win_amd64.whl.metadata (26 kB)
+Collecting asgiref>=3.9.1 (from Django==6.1.3->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 6))
+  Using cached asgiref-3.13.0-py3-none-any.whl.metadata (12 kB)
+Collecting sqlparse>=0.5.0 (from Django==6.1.3->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 6))
+  Using cached sqlparse-0.6.1-py3-none-any.whl.metadata (6.9 kB)
+Collecting tzdata (from Django==6.1.3->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 6))
+  Using cached tzdata-2026.6-py2.py3-none-any.whl.metadata (1.4 kB)
+Collecting pyjwt>=1.7.1 (from djangorestframework-simplejwt==5.5.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 8))
+  Using cached pyjwt-2.15.1-py3-none-any.whl.metadata (3.5 kB)
+Collecting uritemplate>=2.0.0 (from drf-spectacular==0.30.0->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 10))
+  Using cached uritemplate-4.2.0-py3-none-any.whl.metadata (2.6 kB)
+Collecting PyYAML>=5.1 (from drf-spectacular==0.30.0->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 10))
+  Using cached pyyaml-6.0.3-cp314-cp314-win_amd64.whl.metadata (2.4 kB)
+Collecting jsonschema>=2.6.0 (from drf-spectacular==0.30.0->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 10))
+  Using cached jsonschema-4.26.0-py3-none-any.whl.metadata (7.6 kB)
+Collecting inflection>=0.3.1 (from drf-spectacular==0.30.0->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 10))
+  Using cached inflection-0.5.1-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting redis>=4.6 (from channels-redis==4.3.0->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 21))
+  Using cached redis-8.1.0-py3-none-any.whl.metadata (16 kB)
+Collecting msgpack~=1.0 (from channels-redis==4.3.0->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 21))
+  Using cached msgpack-1.2.4-cp314-cp314-win_amd64.whl.metadata (8.5 kB)
+Collecting autobahn>=22.4.2 (from daphne==4.2.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 23))
+  Downloading autobahn-26.11.1-cp314-cp314-win_amd64.whl.metadata (32 kB)
+Collecting twisted>=22.4 (from twisted[tls]>=22.4->daphne==4.2.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 23))
+  Downloading twisted-26.10.0-py3-none-any.whl.metadata (15 kB)
+Collecting geographiclib<3,>=1.52 (from geopy==2.4.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 26))
+  Downloading geographiclib-2.1-py3-none-any.whl.metadata (1.6 kB)
+Collecting colorama>=0.4 (from pytest==9.0.1->-r requirements\dev.txt (line 4))
+  Using cached colorama-0.4.6-py2.py3-none-any.whl.metadata (17 kB)
+Collecting iniconfig>=1.0.1 (from pytest==9.0.1->-r requirements\dev.txt (line 4))
+  Downloading iniconfig-2.3.1-py3-none-any.whl.metadata (2.8 kB)
+Collecting packaging>=22 (from pytest==9.0.1->-r requirements\dev.txt (line 4))
+  Downloading packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+Collecting pluggy<2,>=1.5 (from pytest==9.0.1->-r requirements\dev.txt (line 4))
+  Downloading pluggy-1.7.0-py3-none-any.whl.metadata (5.0 kB)
+Collecting pygments>=2.7.2 (from pytest==9.0.1->-r requirements\dev.txt (line 4))
+  Downloading pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)
+Collecting coverage>=7.10.6 (from coverage[toml]>=7.10.6->pytest-cov==7.1.0->-r requirements\dev.txt (line 6))
+  Downloading coverage-7.17.3-cp314-cp314-win_amd64.whl.metadata (8.5 kB)
+Collecting Faker>=0.7.0 (from factory-boy==3.3.3->-r requirements\dev.txt (line 7))
+  Downloading faker-40.54.0-py3-none-any.whl.metadata (16 kB)
+Collecting cryptography>=46.0.7 (from PyMySQL[rsa]==1.2.3->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 17))
+  Using cached cryptography-50.0.2-cp311-abi3-win_amd64.whl.metadata (4.4 kB)
+Collecting cbor2>=6.1.0 (from autobahn>=22.4.2->daphne==4.2.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 23))
+  Downloading cbor2-6.2.1-cp314-cp314-win_amd64.whl.metadata (5.7 kB)
+Collecting cffi>=2.0.0 (from autobahn>=22.4.2->daphne==4.2.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 23))
+  Using cached cffi-2.1.1-cp314-cp314-win_amd64.whl.metadata (2.6 kB)
+Collecting hyperlink>=21.0.0 (from autobahn>=22.4.2->daphne==4.2.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 23))
+  Downloading hyperlink-21.0.0-py2.py3-none-any.whl.metadata (1.5 kB)
+Collecting txaio>=25.12.2 (from autobahn>=22.4.2->daphne==4.2.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 23))
+  Downloading txaio-26.6.1-py3-none-any.whl.metadata (7.1 kB)
+Collecting ujson>=4.0.2 (from autobahn>=22.4.2->daphne==4.2.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 23))
+  Downloading ujson-6.1.0-cp314-cp314-win_amd64.whl.metadata (10 kB)
+Collecting pycparser (from cffi>=2.0.0->autobahn>=22.4.2->daphne==4.2.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 23))
+  Using cached pycparser-3.12-py3-none-any.whl.metadata (9.7 kB)
+Collecting idna>=2.5 (from hyperlink>=21.0.0->autobahn>=22.4.2->daphne==4.2.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 23))
+  Downloading idna-3.20-py3-none-any.whl.metadata (7.2 kB)
+Collecting attrs>=22.2.0 (from jsonschema>=2.6.0->drf-spectacular==0.30.0->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 10))
+  Using cached attrs-26.1.0-py3-none-any.whl.metadata (8.8 kB)
+Collecting jsonschema-specifications>=2023.03.6 (from jsonschema>=2.6.0->drf-spectacular==0.30.0->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 10))
+  Using cached jsonschema_specifications-2025.9.1-py3-none-any.whl.metadata (2.9 kB)
+Collecting referencing>=0.28.4 (from jsonschema>=2.6.0->drf-spectacular==0.30.0->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 10))
+  Using cached referencing-0.37.0-py3-none-any.whl.metadata (2.8 kB)
+Collecting rpds-py>=0.25.0 (from jsonschema>=2.6.0->drf-spectacular==0.30.0->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 10))
+  Using cached rpds_py-2026.9.1-cp314-cp314-win_amd64.whl.metadata (4.2 kB)
+Collecting automat>=24.8.1 (from twisted>=22.4->twisted[tls]>=22.4->daphne==4.2.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 23))
+  Downloading automat-25.4.16-py3-none-any.whl.metadata (8.4 kB)
+Collecting constantly>=15.1 (from twisted>=22.4->twisted[tls]>=22.4->daphne==4.2.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 23))
+  Downloading constantly-23.10.4-py3-none-any.whl.metadata (1.8 kB)
+Collecting incremental>=24.7.0 (from twisted>=22.4->twisted[tls]>=22.4->daphne==4.2.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 23))
+  Downloading incremental-24.11.0-py3-none-any.whl.metadata (9.5 kB)
+Collecting typing-extensions>=4.13.2 (from twisted>=22.4->twisted[tls]>=22.4->daphne==4.2.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 23))
+  Using cached typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting zope-interface>=8 (from twisted>=22.4->twisted[tls]>=22.4->daphne==4.2.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 23))
+  Downloading zope_interface-8.7-cp314-cp314-win_amd64.whl.metadata (49 kB)
+Collecting pyopenssl>=25.3.0 (from twisted[tls]>=22.4->daphne==4.2.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 23))
+  Downloading pyopenssl-26.4.0-py3-none-any.whl.metadata (22 kB)
+Collecting service-identity>=21.1.0 (from twisted[tls]>=22.4->daphne==4.2.1->-r C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem\requirements\base.txt (line 23))
+  Downloading service_identity-26.1.0-py3-none-any.whl.metadata (4.8 kB)
+Using cached django-6.1.3-py3-none-any.whl (8.4 MB)
+Using cached djangorestframework-3.18.3-py3-none-any.whl (903 kB)
+Using cached djangorestframework_simplejwt-5.5.1-py3-none-any.whl (107 kB)
+Using cached django_cors_headers-4.9.0-py3-none-any.whl (12 kB)
+Using cached drf_spectacular-0.30.0-py3-none-any.whl (111 kB)
+Using cached django_environ-0.14.0-py3-none-any.whl (20 kB)
+Using cached pymysql-1.2.3-py3-none-any.whl (46 kB)
+Using cached channels-4.3.2-py3-none-any.whl (31 kB)
+Using cached channels_redis-4.3.0-py3-none-any.whl (20 kB)
+Downloading django_redis-6.0.0-py3-none-any.whl (33 kB)
+Downloading daphne-4.2.1-py3-none-any.whl (29 kB)
+Downloading geopy-2.4.1-py3-none-any.whl (125 kB)
+Downloading pytest-9.0.1-py3-none-any.whl (373 kB)
+Downloading pytest_django-4.12.0-py3-none-any.whl (26 kB)
+Downloading pytest_cov-7.1.0-py3-none-any.whl (22 kB)
+Downloading factory_boy-3.3.3-py2.py3-none-any.whl (37 kB)
+Downloading ruff-0.15.1-py3-none-win_amd64.whl (11.6 MB)
+   ---------------------------------------- 11.6/11.6 MB 1.8 MB/s  0:00:06
+Using cached asgiref-3.13.0-py3-none-any.whl (27 kB)
+Downloading geographiclib-2.1-py3-none-any.whl (40 kB)
+Using cached msgpack-1.2.4-cp314-cp314-win_amd64.whl (78 kB)
+Downloading pluggy-1.7.0-py3-none-any.whl (27 kB)
+Downloading autobahn-26.11.1-cp314-cp314-win_amd64.whl (2.2 MB)
+   ---------------------------------------- 2.2/2.2 MB 2.4 MB/s  0:00:00
+Downloading cbor2-6.2.1-cp314-cp314-win_amd64.whl (325 kB)
+Using cached cffi-2.1.1-cp314-cp314-win_amd64.whl (187 kB)
+Using cached colorama-0.4.6-py2.py3-none-any.whl (25 kB)
+Downloading coverage-7.17.3-cp314-cp314-win_amd64.whl (231 kB)
+Using cached cryptography-50.0.2-cp311-abi3-win_amd64.whl (3.8 MB)
+Downloading faker-40.54.0-py3-none-any.whl (2.1 MB)
+   ---------------------------------------- 2.1/2.1 MB 2.6 MB/s  0:00:00
+Downloading hyperlink-21.0.0-py2.py3-none-any.whl (74 kB)
+Downloading idna-3.20-py3-none-any.whl (69 kB)
+Using cached inflection-0.5.1-py2.py3-none-any.whl (9.5 kB)
+Downloading iniconfig-2.3.1-py3-none-any.whl (7.6 kB)
+Using cached jsonschema-4.26.0-py3-none-any.whl (90 kB)
+Using cached attrs-26.1.0-py3-none-any.whl (67 kB)
+Using cached jsonschema_specifications-2025.9.1-py3-none-any.whl (18 kB)
+Downloading packaging-26.3-py3-none-any.whl (129 kB)
+Downloading pygments-2.21.0-py3-none-any.whl (1.3 MB)
+   ---------------------------------------- 1.3/1.3 MB 1.4 MB/s  0:00:00
+Using cached pyjwt-2.15.1-py3-none-any.whl (33 kB)
+Using cached pyyaml-6.0.3-cp314-cp314-win_amd64.whl (156 kB)
+Using cached redis-8.1.0-py3-none-any.whl (560 kB)
+Using cached referencing-0.37.0-py3-none-any.whl (26 kB)
+Using cached rpds_py-2026.9.1-cp314-cp314-win_amd64.whl (222 kB)
+Using cached sqlparse-0.6.1-py3-none-any.whl (51 kB)
+Downloading twisted-26.10.0-py3-none-any.whl (3.3 MB)
+   ---------------------------------------- 3.3/3.3 MB 2.4 MB/s  0:00:01
+Downloading automat-25.4.16-py3-none-any.whl (42 kB)
+Downloading constantly-23.10.4-py3-none-any.whl (13 kB)
+Downloading incremental-24.11.0-py3-none-any.whl (21 kB)
+Downloading pyopenssl-26.4.0-py3-none-any.whl (56 kB)
+Downloading service_identity-26.1.0-py3-none-any.whl (11 kB)
+Downloading txaio-26.6.1-py3-none-any.whl (31 kB)
+Using cached typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Downloading ujson-6.1.0-cp314-cp314-win_amd64.whl (235 kB)
+Using cached uritemplate-4.2.0-py3-none-any.whl (11 kB)
+Downloading zope_interface-8.7-cp314-cp314-win_amd64.whl (221 kB)
+Using cached pycparser-3.12-py3-none-any.whl (62 kB)
+Using cached tzdata-2026.6-py2.py3-none-any.whl (348 kB)
+Installing collected packages: zope-interface, uritemplate, ujson, tzdata, typing-extensions, txaio, sqlparse, ruff, rpds-py, redis, PyYAML, PyMySQL, pyjwt, pygments, pycparser, pluggy, packaging, msgpack, iniconfig, inflection, idna, geographiclib, django-environ, coverage, constantly, colorama, cbor2, automat, attrs, asgiref, referencing, pytest, incremental, hyperlink, geopy, Faker, Django, cffi, twisted, pytest-django, pytest-cov, jsonschema-specifications, factory-boy, djangorestframework, django-redis, django-cors-headers, cryptography, channels, service-identity, pyopenssl, jsonschema, djangorestframework-simplejwt, channels-redis, autobahn, drf-spectacular, daphne
+
+Successfully installed Django-6.1.3 Faker-40.54.0 PyMySQL-1.2.3 PyYAML-6.0.3 asgiref-3.13.0 attrs-26.1.0 autobahn-26.11.1 automat-25.4.16 cbor2-6.2.1 cffi-2.1.1 channels-4.3.2 channels-redis-4.3.0 colorama-0.4.6 constantly-23.10.4 coverage-7.17.3 cryptography-50.0.2 daphne-4.2.1 django-cors-headers-4.9.0 django-environ-0.14.0 django-redis-6.0.0 djangorestframework-3.18.3 djangorestframework-simplejwt-5.5.1 drf-spectacular-0.30.0 factory-boy-3.3.3 geographiclib-2.1 geopy-2.4.1 hyperlink-21.0.0 idna-3.20 incremental-24.11.0 inflection-0.5.1 iniconfig-2.3.1 jsonschema-4.26.0 jsonschema-specifications-2025.9.1 msgpack-1.2.4 packaging-26.3 pluggy-1.7.0 pycparser-3.12 pygments-2.21.0 pyjwt-2.15.1 pyopenssl-26.4.0 pytest-9.0.1 pytest-cov-7.1.0 pytest-django-4.12.0 redis-8.1.0 referencing-0.37.0 rpds-py-2026.9.1 ruff-0.15.1 service-identity-26.1.0 sqlparse-0.6.1 twisted-26.10.0 txaio-26.6.1 typing-extensions-4.16.0 tzdata-2026.6 ujson-6.1.0 uritemplate-4.2.0 zope-interface-8.7
