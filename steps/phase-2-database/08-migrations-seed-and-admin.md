@@ -17,6 +17,12 @@ not user data. Without them:
 - The booking screen has no modes to offer
 - A fare cannot be calculated, because `RIDE_MODE.base_fare` has no rows
 - No driver can be accredited, because `ACCREDITATION.lgu_code` has nothing to point at
+- `FareCalculator` has no commission rate to read, because `PLATFORM_CONFIG` has no rows —
+  the point of D-62 was "a rate in `PLATFORM_CONFIG` is a row edit"; with no rows it is a
+  `PlatformConfig.DoesNotExist` instead
+- The booking fee the mockups show never reaches a receipt, because `booking_fee` falls
+  back to its DDL default of 0 — a silent wrong price, not an error (the state D-64
+  exists to prevent)
 
 Reference data is part of the schema in everything but name. The test for whether you
 got this right is the M2 exit criterion: **`migrate` then `seed_lookups`, on a fresh
@@ -95,6 +101,8 @@ from apps.rides.models import RideModeLookup
 # Fares are indicative Philippine rates, not researched tariffs. They are
 # rows rather than constants precisely so they can be tuned without a
 # deploy — which is the point of FareCalculator.baseRates being a table.
+# booking_fee is decided, not indicative: ₱3.00 flat on every mode (D-64),
+# charged once per RIDE — never multiplied by the leg count.
 RIDE_MODES = [
     {
         "mode_code": RideMode.TRICYCLE,
@@ -103,6 +111,7 @@ RIDE_MODES = [
         "per_km_rate": Decimal("12.00"),
         "seat_capacity": 3,
         "is_shared": False,
+        "booking_fee": Decimal("3.00"),
     },
     {
         "mode_code": RideMode.JEEPNEY,
@@ -111,6 +120,7 @@ RIDE_MODES = [
         "per_km_rate": Decimal("2.00"),
         "seat_capacity": 20,
         "is_shared": True,
+        "booking_fee": Decimal("3.00"),
     },
     {
         "mode_code": RideMode.UV_EXPRESS,
@@ -119,6 +129,7 @@ RIDE_MODES = [
         "per_km_rate": Decimal("5.00"),
         "seat_capacity": 14,
         "is_shared": True,
+        "booking_fee": Decimal("3.00"),
     },
     {
         "mode_code": RideMode.HABAL_HABAL,
@@ -127,6 +138,7 @@ RIDE_MODES = [
         "per_km_rate": Decimal("15.00"),
         "seat_capacity": 1,
         "is_shared": False,
+        "booking_fee": Decimal("3.00"),
     },
     {
         "mode_code": RideMode.ETRIKE,
@@ -135,6 +147,7 @@ RIDE_MODES = [
         "per_km_rate": Decimal("10.00"),
         "seat_capacity": 4,
         "is_shared": False,
+        "booking_fee": Decimal("3.00"),
     },
     {
         "mode_code": RideMode.CAR,
@@ -143,6 +156,7 @@ RIDE_MODES = [
         "per_km_rate": Decimal("18.00"),
         "seat_capacity": 4,
         "is_shared": False,
+        "booking_fee": Decimal("3.00"),
     },
 ]
 
@@ -200,9 +214,18 @@ LGU_UNITS = [
     },
 ]
 
+# D-62 (A-13): the four keys `schema_listing.md` §27 documents. Values stay strings —
+# readers cast, per the PlatformConfig docstring.
+PLATFORM_CONFIG = [
+    {"key": "commission_rate",       "value": "0.10",  "description": "Platform's cut of each fare"},
+    {"key": "commission_free_trips", "value": "5",     "description": "Trips before commission applies"},
+    {"key": "cancellation_fee",      "value": "20.00", "description": "Charged when a passenger cancels after matching"},
+    {"key": "sos_response_seconds",  "value": "60",    "description": "Target time to notify all trusted contacts"},
+]
+
 
 class Command(BaseCommand):
-    help = "Seed reference tables: ride modes, payment methods, LGU units."
+    help = "Seed reference tables: ride modes, payment methods, LGU units, platform config."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -219,6 +242,7 @@ class Command(BaseCommand):
         self._seed_ride_modes()
         self._seed_payment_methods()
         self._seed_lgu_units()
+        self._seed_platform_config()
 
         self.stdout.write(self.style.SUCCESS("Reference data seeded."))
 
@@ -230,6 +254,7 @@ class Command(BaseCommand):
         deleted = RideModeLookup.objects.all().delete()[0]
         deleted += PaymentMethodLookup.objects.all().delete()[0]
         deleted += LGUUnit.objects.all().delete()[0]
+        deleted += PlatformConfig.objects.all().delete()[0]
         self.stdout.write(f"  reset: removed {deleted} rows")
 
     def _seed_ride_modes(self) -> None:
@@ -254,6 +279,13 @@ class Command(BaseCommand):
             _, created = LGUUnit.objects.update_or_create(lgu_code=code, defaults=row)
             self._report("LGU unit", code, created)
 
+    def _seed_platform_config(self) -> None:
+        for row in PLATFORM_CONFIG:
+            _, created = PlatformConfig.objects.update_or_create(
+                key=row["key"], defaults=row
+            )
+            self._report("platform config", row["key"], created)
+
     def _report(self, kind: str, code: str, created: bool) -> None:
         verb = "created" if created else "updated"
         self.stdout.write(f"  {verb:8} {kind:16} {code}")
@@ -263,6 +295,10 @@ class Command(BaseCommand):
 fare in this file and re-running the command would silently do nothing — the row
 already exists. `update_or_create` makes this file the source of truth for reference
 data, which is what you want when you tune fares during Phase 4 testing.
+
+**Don't forget the import.** `_seed_platform_config` needs `PlatformConfig` added to
+the import from `apps.core.models`, alongside `RideModeLookup`, `PaymentMethodLookup`
+and `LGUUnit`. Without it the command dies with `NameError` on its first run.
 
 ### 3. Write the admin registrations (~40 min)
 
@@ -657,7 +693,8 @@ could read to see the schema. Migrations are the DDL now — this just writes th
 in a form a person can read without running anything.
 
 ```powershell
-docker compose exec -T mysql mysqldump -u root -prootpass `
+$root = (Select-String -Path .env -Pattern '^MYSQL_ROOT_PASSWORD=').Line.Split('=', 2)[1]
+docker compose exec -T mysql mysqldump -u root "-p$root" `
   --no-data --skip-comments --skip-add-drop-table --compact sakayph `
   > docs/schema.sql
 ```
@@ -747,6 +784,9 @@ git push origin v0.1.0
 - [ ] `makemigrations --check --dry-run` reports no changes
 - [ ] `migrate` then `seed_lookups` on a fresh volume works with no manual SQL
 - [ ] Running `seed_lookups` twice creates nothing new
+- [ ] `PLATFORM_CONFIG` holds the four D-62 keys (`commission_rate` 0.10,
+      `commission_free_trips` 5, `cancellation_fee` 20.00, `sos_response_seconds` 60)
+- [ ] Every `RIDE_MODE` row carries `booking_fee` 3.00 (D-64 — flat, charged once per ride)
 - [ ] All 27 application tables exist
 - [ ] `City of Biñan` reads back with the `ñ` intact
 - [ ] All 27 models open in the admin without error
@@ -763,7 +803,8 @@ git push origin v0.1.0
 ```markdown
 **Step 2.08 — migrations, seed and admin — DONE**
 
-- Added seed_lookups command: 6 ride modes, 3 payment methods, 4 LGU units;
+- Added seed_lookups command: 6 ride modes (each with the ₱3.00 booking_fee from D-64),
+  3 payment methods, 4 LGU units, and the four PLATFORM_CONFIG keys from D-62;
   idempotent via update_or_create, --reset available
 - Registered all 27 models in the admin with list_display/filters/search,
   RideLeg inline on Ride, WalletTxn inline on Wallet, SOSNotification inline

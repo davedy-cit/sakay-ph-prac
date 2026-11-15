@@ -418,8 +418,18 @@ class PlatformConfig(models.Model):
 ```
 
 Then, **before you migrate**, add the table to `database/schema_listing.md` as
-table 27 and add `RIDE_MODE.booking_fee`. The design change comes first — that is
-the rule from `CONTRIBUTING.md`.
+table 27 and add `RIDE_MODE.booking_fee` — and add the same two things to **both EER
+sources**: a `PLATFORM_CONFIG` entity in `database/diagrams/eer_development.puml` and
+`database/diagrams/eer_core.puml`, plus `booking_fee` on `RIDE_MODE` in both. Then
+re-render both PNGs. The design change comes first — that is the rule from
+`CONTRIBUTING.md`.
+
+> **This instruction was added on 14 Nov, the hard way.** The step originally said
+> "schema listing and consistency report" and never mentioned the diagrams. The EER
+> sources went stale for two days: `schema_listing.md`'s header asserts every table
+> appears in `eer_development.puml`, so updating the listing without the diagrams made
+> that header false, and `eer_development.png` still showed 26 entities. The checklist
+> below now carries the item this step should always have had.
 
 **You do not write a new `consistency_report.md` entry for this.** A-13 was already
 recorded as **D-62** on Day 5, when you decided it in
@@ -474,6 +484,8 @@ python -c "from apps.core import enums; print(len([n for n in dir(enums) if not 
 - [ ] `PLATFORM_CONFIG` exists with `key` as its primary key
 - [ ] The schema listing and the consistency report were updated to carry table 27
       **before** the model was written (D-62)
+- [ ] Both EER sources gained `PLATFORM_CONFIG` and `RIDE_MODE.booking_fee`, and both
+      PNGs were re-rendered (item added 14 Nov — the one the first run missed)
 
 ---
 
@@ -489,6 +501,7 @@ python -c "from apps.core import enums; print(len([n for n in dir(enums) if not 
 - Decision: PK attribute named `id` (Django idiom) while db_table keeps the
   schema's UPPER_SNAKE name
 - **D-62 (A-13):** PLATFORM_CONFIG added as table 27; schema_listing.md updated first
+  (EER sources + PNG re-render added to this step on 14 Nov, after the first run missed them)
 - **Commit:** <sha>
 ```
 

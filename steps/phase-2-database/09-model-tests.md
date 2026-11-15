@@ -69,13 +69,16 @@ docker compose up -d
 **If you would rather not wipe the volume**, grant it against the running container:
 
 ```powershell
-"GRANT ALL PRIVILEGES ON ``test_sakayph``.* TO 'sakayph'@'%'; FLUSH PRIVILEGES;" | docker compose exec -T mysql mysql -u root -prootpw
+# Read the root password from .env rather than hardcoding it. `$root` stays set for
+# the check below.
+$root = (Select-String -Path .env -Pattern '^MYSQL_ROOT_PASSWORD=').Line.Split('=', 2)[1]
+"GRANT ALL PRIVILEGES ON ``test_sakayph``.* TO 'sakayph'@'%'; FLUSH PRIVILEGES;" | docker compose exec -T mysql mysql -u root "-p$root"
 ```
 
 The doubled backticks are PowerShell's escape for a literal backtick. Confirm with:
 
 ```powershell
-docker compose exec mysql mysql -u root -prootpw -e "SHOW GRANTS FOR 'sakayph'@'%';"
+docker compose exec mysql mysql -u root "-p$root" -e "SHOW GRANTS FOR 'sakayph'@'%';"
 ```
 
 You should see a line for `test_sakayph`.

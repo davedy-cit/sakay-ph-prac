@@ -88,7 +88,10 @@ The design is frozen (see `docs/plan/design-freeze.md`). To change it:
 
 1. Change the design artefact first — never the code
 2. Append an entry to `database/consistency_report.md`
-3. Re-render affected diagrams with `-DPLANTUML_LIMIT_SIZE=16384`
+3. Re-render affected diagrams with `-DPLANTUML_LIMIT_SIZE=16384`. No `plantuml.jar`
+   lives in this repo and `dot` is not on `PATH`, so render through the pinned image
+   (it bundles Graphviz) — e.g. the EER diagrams:
+   `docker run --rm -v "${PWD}\database\diagrams:/data" --entrypoint java plantuml/plantuml:1.2026.10 -DPLANTUML_LIMIT_SIZE=16384 -jar /opt/plantuml.jar -tpng -charset UTF-8 eer_development.puml eer_core.puml`
 4. Record it in the decision log in `steps/PROGRESS.md`
 5. Then change the code
 

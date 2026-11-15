@@ -97,6 +97,7 @@ entity "RIDE_MODE" as mode {
   * per_km_rate : DECIMAL(8,2)
   * seat_capacity : SMALLINT
   * is_shared : BOOLEAN
+  * booking_fee : DECIMAL(8,2)
 }
 
 entity "SURGE_PERIOD" as surge {
@@ -109,6 +110,16 @@ entity "SURGE_PERIOD" as surge {
   * starts_at : DATETIME
   * ends_at : DATETIME
   * is_active : BOOLEAN
+}
+
+' ---- PLATFORM_CONFIG (table 27, D-62) ----
+' Standalone: configures the platform, not any one row of it.
+entity "PLATFORM_CONFIG" as pcfg {
+  * key : VARCHAR(60) <<PK>>
+  --
+  * value : VARCHAR(255)
+  description : VARCHAR(255)
+  * updated_at : DATETIME
 }
 
 entity "PASSENGER_PREFERRED_MODE" as pref {

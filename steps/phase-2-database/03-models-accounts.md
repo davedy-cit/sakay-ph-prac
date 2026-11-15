@@ -28,13 +28,18 @@ procedure from `CONTRIBUTING.md`:
    `last_login DATETIME NULL`, `is_staff BOOLEAN NOT NULL DEFAULT 0`,
    `is_superuser BOOLEAN NOT NULL DEFAULT 0`
 2. Add a `UNIQUE` mark to `phone` in the same table
-3. Append **D-64/D-65/D-66** entries to `database/consistency_report.md` — one each
+3. Append **D-65/D-66/D-67** entries to `database/consistency_report.md` — one each
    for the three added columns, since each is a separate change to the listing.
-   **Check the next free number before you write it.** D-62 is A-13 (Day 5) and D-63
-   is the `char(32)` UUID decision (Day 5), so D-64 is the next free slot. If your
-   report already has more entries than that, continue from whatever is actually
-   next — the rule is one number per change, never reuse one.
-4. Re-render `eer_core.puml` with `-DPLANTUML_LIMIT_SIZE=16384`
+   **Check the next free number before you write it.** D-62 is A-13 (Day 5), D-63 is
+   the `char(32)` UUID decision (Day 5), and D-64 is the booking fee's value
+   (14 Nov — see §3.12), so D-65 is the next free slot. If your report has grown
+   further than that, continue from whatever is actually next — the rule is one
+   number per change, never reuse one.
+4. Update USER in **both** EER sources — `database/diagrams/eer_core.puml` **and**
+   `database/diagrams/eer_development.puml`: add the three columns and mark `phone`
+   with `<<UQ>>` — then re-render both PNGs (recipe in `CONTRIBUTING.md`). USER appears
+   in both diagrams; touching only `eer_core` re-creates the stale-PNG defect class
+   D-62 hit on 12–14 Nov
 5. Record it in the decision log in `steps/PROGRESS.md`
 6. **Then** write the model
 
@@ -689,8 +694,8 @@ docker compose exec mysql mysql -u sakayph -psakayph sakayph -e "SHOW TABLES;"
 **Step 2.03 — accounts models — DONE**
 
 - Recorded design change: USER gains last_login, is_staff, is_superuser; phone
-  becomes UNIQUE (D-64/65/66 in consistency_report.md, schema_listing.md updated,
-  eer_core.puml re-rendered)
+  becomes UNIQUE (D-65/66/67 in consistency_report.md, schema_listing.md and both
+  EER sources updated, both PNGs re-rendered)
 - Chose AUTH_USER_MODEL = accounts.User (option A) over a dual identity system
 - USER uses phone as USERNAME_FIELD; is_active derived from account_status
 - PASSENGER and DRIVER use OneToOneField(primary_key=True) for class-table inheritance

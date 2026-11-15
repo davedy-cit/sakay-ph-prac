@@ -185,7 +185,10 @@ longer than Redis on first start because it initialises the data directory.
 **Prove the database is actually usable, not just running:**
 
 ```powershell
-docker compose exec mysql mysql -u root -prootpw -e "SHOW DATABASES; SHOW VARIABLES LIKE 'character_set_server';"
+# Read the root password from .env. Never paste a real one into a step file —
+# these files are committed, and a password in one is a password in the history.
+$root = (Select-String -Path .env -Pattern '^MYSQL_ROOT_PASSWORD=').Line.Split('=', 2)[1]
+docker compose exec mysql mysql -u root "-p$root" -e "SHOW DATABASES; SHOW VARIABLES LIKE 'character_set_server';"
 ```
 
 Expected: `sakayph` appears in the list, and `character_set_server` is `utf8mb4`.
@@ -493,8 +496,19 @@ git push
 # Services healthy
 docker compose ps
 
-# Database reachable with the right encoding
-docker compose exec mysql mysql -u root -prootpw -e "SHOW VARIABLES LIKE 'character_set_server';"
+# Database reachable with the right encoding.
+# Both passwords live in .env — read them from there. Hardcoding one here is how a
+# real secret ends up in a committed file.
+$root = (Select-String -Path .env -Pattern '^MYSQL_ROOT_PASSWORD=').Line.Split('=', 2)[1]
+$app  = (Select-String -Path .env -Pattern '^MYSQL_PASSWORD=').Line.Split('=', 2)[1]
+
+docker compose exec mysql mysql -u root "-p$root" -e "SHOW VARIABLES LIKE 'character_set_server';"
+docker compose exec mysql mysql -u root "-p$root" -e "SHOW VARIABLES LIKE 'collation_server';"
+
+# The app user is the one Django actually uses. This is the check that catches a
+# mismatch between the password Compose created and the one django-environ reads —
+# the `$`-in-`.env` defect recorded in docs/plan/install-log.txt.
+docker compose exec mysql mysql -u sakayph "-p$app" -e "SHOW DATABASES;"
 
 # Redis reachable
 docker compose exec redis redis-cli ping

@@ -1,8 +1,8 @@
 # Sakay.ph — Database Schema Listing
 
 Companion reference for the ER / EER diagrams. Every table below appears in
-`eer_development.puml`; `eer_core.puml` and `eer_features.puml` together contain
-exactly the same 26 tables with the same column names.
+`database/diagrams/eer_development.puml`; `eer_core.puml` and `eer_features.puml`
+together contain exactly the same 27 tables with the same column names.
 
 **How to read a table:** *Key* shows `PK` (primary key), `FK` (foreign key), `UQ`
 (unique) and `DERIVED` (computed, not stored). *Source* traces the column back to
@@ -17,21 +17,25 @@ storage: 32 bytes instead of the 16 a `BINARY(16)` column would use. At this pro
 scale the difference is immaterial, and the default avoids a custom field and a
 hand-written migration. Recorded as **D-63** in `consistency_report.md` §3.11.
 
-> ### ⚠ Pending: table 27 (`PLATFORM_CONFIG`) — D-62
+> ### Table 27 (`PLATFORM_CONFIG`) — D-62, implemented in Phase 2
 >
-> This listing currently describes the **26-table** design as audited. Audit finding
-> **A-13** was decided on 11 November 2026 and recorded as **D-62** in
-> `consistency_report.md` §3.10. It adds two things:
+> Audit finding **A-13** was decided on 11 November 2026 and recorded as **D-62** in
+> `consistency_report.md` §3.10. It took the audited 26-table design to **27** by adding
+> two things, both now written into this listing and into the EER diagram sources:
 >
 > 1. **`PLATFORM_CONFIG`** — a new key-value table (table 27) holding the commission
 >    rate, the commission-free trip count, the cancellation fee and the SOS response
->    target
+>    target — see **§27**
 > 2. **`RIDE_MODE.booking_fee`** — a `DECIMAL(8,2) NOT NULL DEFAULT 0` column for the
->    flat per-mode booking fee the mockups show
+>    flat per-mode booking fee the mockups show — see **§7**
 >
-> Both are written into this file in **Phase 2, Step 02.01** — *before* the first
-> migration runs, because the design changes first and the code follows. Until that
-> edit lands, this document and the EER diagrams deliberately still say 26.
+> Applied in **Phase 2, Step 02.01** — *before* the first migration ran, because the
+> design changes first and the code follows. D-62's status in `consistency_report.md`
+> §3.10 is now `implemented (Phase 2)`.
+>
+> A-13 also carried two **non-schema** corrections, both recorded in §3.10: the
+> chain discount shown in `mock1_home.png` was dropped rather than implemented, and
+> `mock3_payment.png`'s total was corrected to ₱51.00. Neither changes a table.
 
 ---
 
@@ -118,9 +122,14 @@ Supertype for every person on the platform — passengers, drivers and admins.
 | per_km_rate | DECIMAL(8,2) | NOT NULL | — | `FareCalculator.baseRates` |
 | seat_capacity | SMALLINT | NOT NULL | — | *(added)* |
 | is_shared | BOOLEAN | NOT NULL | — | *(added — Pakyawan-capable modes)* |
+| booking_fee | DECIMAL(8,2) | NOT NULL, DEFAULT 0 | — | *(added — D-62, audit finding A-13)* |
 
 > Holds tricycle, jeepney, UV Express, habal-habal, e-trike and car — the
 > *Lahat ng Sakyan* mode list.
+>
+> Seeded in [Step 02.08](../steps/phase-2-database/08-migrations-seed-and-admin.md) with
+> `booking_fee` at **₱3.00 on every mode**, charged **once per ride** (not per leg) — the
+> value and the once-per-ride rule are **D-64** in `consistency_report.md` §3.12.
 
 ## 8. SURGE_PERIOD — Bagyo Mode
 
@@ -380,6 +389,29 @@ passenger-scoped, so driver earnings get a table of their own.
 | mode_code | VARCHAR(12) | PK, FK | RIDE_MODE.mode_code | `Passenger.preferredModes` |
 | preferred_rank | SMALLINT | NOT NULL | — | *(added — display order)* |
 
+## 27. PLATFORM_CONFIG — key-value configuration
+
+Operator-changeable business settings, so a rate change is a row edit rather than a
+deploy. Deliberately untyped and unconstrained: the alternative is a column per
+setting, which means a migration every time a business rule changes. Readers are
+responsible for casting; the seed data documents the types.
+
+| Column | Type | Key | References | Source |
+|---|---|---|---|---|
+| key | VARCHAR(60) | PK | — | *(added — D-62)* |
+| value | VARCHAR(255) | NOT NULL | — | *(added — D-62)* |
+| description | VARCHAR(255) | NULL | — | *(added — D-62)* |
+| updated_at | DATETIME | NOT NULL | — | *(added — D-62)* |
+
+> Seeded in [Step 02.08](../steps/phase-2-database/08-migrations-seed-and-admin.md) with
+> `commission_rate` (`0.10`), `commission_free_trips` (`5`), `cancellation_fee` (`20.00`)
+> and `sos_response_seconds` (`60`). Read by `FareCalculator` for the commission rate and
+> by the SOS handler for its notification target.
+>
+> **No foreign keys, and no relationships.** This table configures the platform as a
+> whole rather than any one row of it, which is why it appears in the EER diagrams
+> unconnected.
+
 ---
 
 # Domains (enumerated values)
@@ -446,7 +478,7 @@ Where each construct from the reference figures appears in this schema:
 
 | EER construct | Where it lives |
 |---|---|
-| **Strong entity** | USER, RIDE, PAYMENT, LOCATION, VEHICLE, … (22 of the 26 tables — the other four are the weak and associative entities below) |
+| **Strong entity** | USER, RIDE, PAYMENT, LOCATION, VEHICLE, … (23 of the 27 tables — the other four are the weak and associative entities below) |
 | **Weak entity** | RIDE_LEG — no identifier of its own, PK `(ride_id, leg_no)`, identifying relationship to RIDE |
 | **Associative entity** | FARE_SHARE (PAYMENT × PASSENGER), SOS_NOTIFICATION (SOS_ALERT × TRUSTED_CONTACT), PASSENGER_PREFERRED_MODE (PASSENGER × RIDE_MODE) |
 | **Supertype / subtype** | USER ⊂ PASSENGER, DRIVER — disjoint, total, discriminated by `user_role` |

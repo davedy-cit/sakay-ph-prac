@@ -91,7 +91,7 @@ honest record of what was done on which day.
 |---|---|
 | [`docs/proposal/`](docs/proposal/) | Concept paper, proposal deck, technology stack |
 | [`docs/uml/`](docs/uml/) | Use case, class, sequence, activity diagrams (development + overview) |
-| [`database/`](database/) | EER/ER diagrams, schema listing (26 tables as audited; 27 once D-62 lands), consistency audit |
+| [`database/`](database/) | EER/ER diagrams, schema listing (27 tables — 26 audited plus PLATFORM_CONFIG per D-62), consistency audit |
 | [`docs/mockups/`](docs/mockups/) | UI mockups — passenger and driver |
 | [`docs/review/`](docs/review/) | Folder audit and technology stack review |
 | [`docs/plan/`](docs/plan/) | Roadmap and design freeze |

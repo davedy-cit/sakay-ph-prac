@@ -101,8 +101,9 @@ The two code changes land in this phase:
   **before** the migration runs
 
 **Numbering:** A-13 is **D-62**. Do not issue a second entry for it in this phase.
-Phase 2's own design changes continue from **D-64** (D-63 is taken by the `char(32)`
-UUID decision in Step 0.03). See the "Design-change numbers" section below.
+Phase 2's own design changes continue from **D-65** (D-63 is taken by the `char(32)`
+UUID decision in Step 0.03; D-64 by the booking fee's value, decided 14 Nov). See the
+"Design-change numbers" section below.
 
 What you must not do is add either column silently. If you disagree with D-62, the
 route is a *new* D-number that supersedes it — not a quiet divergence from it.
@@ -120,8 +121,9 @@ Phase 2 steps must not reissue them:
 | … | D-01 … D-61 — the original audit's defect register | Phase 0, pre-existing |
 | **D-62** | A-13 — booking fee, commission rule, chain discount dropped, `mock3` arithmetic corrected | Day 5, [Step 0.01](../phase-0-design-completion/01-complete-technology-stack.md) |
 | **D-63** | UUIDs stored as `char(32)` on MySQL rather than a native `UUID` column | Day 5, [Step 0.03](../phase-0-design-completion/03-design-freeze-check.md) |
-| **D-64/65/66** | `USER` gains `last_login`, `is_staff`, `is_superuser`; `phone` becomes `UNIQUE` | Phase 2, [Step 03](03-models-accounts.md) |
-| **D-67** | The four composite primary keys become surrogate `id` + `UniqueConstraint` | Phase 2, [Step 04](04-models-rides-core.md) |
+| **D-64** | `RIDE_MODE.booking_fee` seeded at ₱3.00 flat on every mode, charged once per ride | 14 Nov, recorded in [Step 08](08-migrations-seed-and-admin.md)'s seed data |
+| **D-65/66/67** | `USER` gains `last_login`, `is_staff`, `is_superuser`; `phone` becomes `UNIQUE` | Phase 2, [Step 03](03-models-accounts.md) |
+| **D-68** | The four composite primary keys become surrogate `id` + `UniqueConstraint` | Phase 2, [Step 04](04-models-rides-core.md) |
 
 **Before writing any entry, open `consistency_report.md` and read the last number in
 it.** The table above is what the step files expect; your report is what actually

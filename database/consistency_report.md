@@ -17,11 +17,11 @@ case has somewhere to write. But the audit found **61 defects**, in two directio
 All 61 are fixed. This document is the evidence: what was checked, what was wrong,
 what changed, and what is still a known limitation.
 
-Two later design decisions are recorded in the same register, because the register is
+Three later design decisions are recorded in the same register, because the register is
 the single running list of every change to the design: **D-62** (the pricing gap found
-in the mockups, §3.10) and **D-63** (UUID storage on MySQL, §3.11). Neither is a defect
-this audit found. The design is frozen as of **11 November 2026** — see
-`docs/plan/design-freeze.md`.
+in the mockups, §3.10), **D-63** (UUID storage on MySQL, §3.11) and **D-64** (the
+booking fee's value, §3.12). None is a defect this audit found. The design is frozen as
+of **11 November 2026** — see `docs/plan/design-freeze.md`.
 
 ---
 
@@ -29,11 +29,11 @@ this audit found. The design is frozen as of **11 November 2026** — see
 
 | Artifact | Role |
 |---|---|
-| `database/eer_development.puml` | Comprehensive EER — 26 tables at audit time; **27 after D-62** |
-| `database/eer_core.puml` | Part 1 of 2 — 12 tables (people, vehicles, rides, locations, pricing) |
-| `database/eer_features.puml` | Part 2 of 2 — 14 tables + 4 key-only reference stubs |
+| `database/diagrams/eer_development.puml` | Comprehensive EER — 26 tables at audit time; **27 since Step 02.01**, which added `PLATFORM_CONFIG` and `RIDE_MODE.booking_fee` |
+| `database/diagrams/eer_core.puml` | Part 1 of 2 — **13 tables since Step 02.01** (people, vehicles, rides, locations, pricing + `PLATFORM_CONFIG`) |
+| `database/diagrams/eer_features.puml` | Part 2 of 2 — 14 tables + 4 key-only reference stubs. Unaffected by D-62 |
 | `database/er_overview.puml` | Simplified crow's-foot ER for the basic model |
-| `database/schema_listing.md` | Written schema reference — 26 tables at audit time, domains, cardinalities; **gains table 27 and `RIDE_MODE.booking_fee` in Phase 2** |
+| `database/schema_listing.md` | Written schema reference — 26 tables at audit time; **27 since Step 02.01**, which added table 27 (`PLATFORM_CONFIG`) and `RIDE_MODE.booking_fee`. Domains and cardinalities unchanged |
 | `uml/class_development.puml` | 20 classes, 8 enums |
 | `uml/usecase_development.puml` | 27 use cases, 5 actors |
 | `uml/sequence_development.puml` | Detailed interactions |
@@ -223,11 +223,11 @@ All 27 covered — none orphaned.
 ## 3. Defect register
 
 Severity: **H** = a grader would mark it wrong · **M** = visibly inconsistent ·
-**L** = cosmetic. **D-01 … D-61 are all fixed.** **D-62** and **D-63** (below) are not
-defects this audit found — they are design decisions taken afterwards, recorded here so
-the register stays the single running list of every change to the design.
+**L** = cosmetic. **D-01 … D-61 are all fixed.** **D-62**, **D-63** and **D-64** (below)
+are not defects this audit found — they are design decisions taken afterwards, recorded
+here so the register stays the single running list of every change to the design.
 
-**The next free number is D-64.** Always confirm that by opening this file and reading
+**The next free number is D-65.** Always confirm that by opening this file and reading
 the last entry before you write a new one — the number matters more than the entry.
 
 ### 3.1 Database diagrams — cardinalities the schema cannot enforce
@@ -384,14 +384,30 @@ say about chains: that an Isang Biyahe trip's fare is the **sum of its legs**.
 rule stays in code because it is a rule, not a number — the number it reads (`5`) is
 configurable, the logic is not.
 
-**Status of the two changes.** Both land in Phase 2 — `booking_fee` in Step 02.03 (it is a
-column on `RIDE_MODE`, which that step writes first so that `Vehicle.mode` can resolve),
-`PLATFORM_CONFIG` in Step 02.01 — **before** the first migration runs. Until they do, this
-entry is `decided`, not `implemented`.
+**Status of the two changes — `implemented (Phase 2)`.** Both were written into
+`schema_listing.md` and into the two EER sources in **Step 02.01**, before the first
+migration ran. The `PLATFORM_CONFIG` **model** also landed in 02.01. The
+`RIDE_MODE.booking_fee` **column** lands in **Step 02.03**, because that is the step that
+writes `RIDE_MODE` — first, so that `Vehicle.mode` can resolve.
 
 | ID | Sev | Artifact | Was | Now | Why |
 |---|---|---|---|---|---|
 | D-62 | **H** | `mock1_home.png`, `mock3_payment.png`, `mock4_driver.png`, `schema_listing.md` | Four pricing behaviours shown in the UI had no column, no rule and no computation; `mock3`'s total was ₱3.00 short | `RIDE_MODE.booking_fee` + `PLATFORM_CONFIG` (table 27); chain discount dropped; `mock3` corrected to ₱51.00 | `FareCalculator` could not reproduce any of them, so Phase 3 would have invented the rules mid-build — which is how a schema drifts from its design |
+
+**The EER renders are done.** D-62 adds an entity (`PLATFORM_CONFIG`) and a column
+(`RIDE_MODE.booking_fee`), so the renders had to be regenerated after the sources changed in
+Step 02.01 — until 14 Nov they still showed the 26-entity render, because Graphviz `dot` was not
+on `PATH` and no PlantUML jar existed in the repo. Both were re-rendered on **14 Nov** with the
+pinned image `plantuml/plantuml:1.2026.10`, which bundles Graphviz, using exactly D-61's
+invocation through an entrypoint override:
+`--entrypoint java … -DPLANTUML_LIMIT_SIZE=16384 -jar /opt/plantuml.jar -tpng -charset UTF-8`.
+Verified, not assumed: `eer_development.png` is **3805×3063** (was 3504×3332) with **27**
+entities, and `eer_core.png` is **2356×2557** (was 2065×2773) with **13** — read off the rendered
+PNGs, neither at the 4096 clip (D-61), with `PLATFORM_CONFIG` and `RIDE_MODE.booking_fee` visible
+in both. The layouts re-packed because a different PlantUML/Graphviz version produced them; the
+result is a whole-diagram render from the current sources rather than a mixed-generation image.
+`eer_features.png` and `er_overview.png` were deliberately not re-rendered: `eer_features.puml`
+is unchanged by D-62, and `er_overview.puml` does not model `RIDE_MODE` at all.
 
 **The mockup PNGs were not edited.** They are the design input, and they are now known to
 contain one arithmetic error and one behaviour that was deliberately dropped. That is recorded
@@ -422,6 +438,35 @@ default is kept.**
 
 **No diagram re-render is needed.** The EER diagrams show entities, keys and cardinalities;
 none of them display a storage type, so nothing in `database/diagrams/` changes.
+
+### 3.12 The booking fee's value (14 Nov)
+
+**This entry is a decision, not a defect** — recorded like D-63, because it completes
+D-62: D-62 created `RIDE_MODE.booking_fee`; this decides what the column holds.
+
+**What was undetermined.** D-62 added the column but left its value open, and the design
+input is a single line in `mock3_payment.png`: "Booking fee ₱3.00". Left undecided, the
+seed step would either invent per-mode numbers with nothing behind them or rely on the
+DDL's `DEFAULT 0` — which silently disables the fee and recreates the exact "a behaviour
+the UI shows with no value behind it" state that A-13 flagged.
+
+| ID | Sev | Artifact | Was | Now | Why |
+|---|---|---|---|---|---|
+| D-64 | **L** | `mock3_payment.png`, `schema_listing.md` §7 | `RIDE_MODE.booking_fee` existed with no decided value | Seeded at **₱3.00 on all six modes**, charged **once per ride** — not per leg | ₱3.00 is the only artefact-traceable number, and a flat per-booking fee is how Philippine platforms actually charge. On a ₱15 jeepney leg the 10% commission is ₱1.50 — the flat fee is the platform's meaningful take on the cheap modes where a percentage earns almost nothing |
+
+**Rejected alternatives.** Per-mode values (₱5 for cars, ₱2 for trikes): no artefact
+supports any differentiation, so every number would be an invention a marker cannot
+trace. Seeding ₱0 and relying on the DDL default: the mockup shows the fee, so an inert
+seed repeats A-13.
+
+**Once per ride, not per leg.** An *Isang Biyahe* three-leg chain charges ₱3.00 in total,
+not ₱9.00 — the mockup shows a single fee line. `FareCalculator` reads the booking fee
+once, off `RIDE.mode_code` (the ride-level mode; for a chain, the first leg's), and never
+multiplies it by `leg_count`. Stated here because Phase 3 is where the mistake would
+otherwise be made.
+
+**No diagram re-render is needed.** The EER shows the column, not its values — same
+reasoning as D-63. The seed lands in **Step 02.08**; the computation in Phase 3.
 
 ---
 
