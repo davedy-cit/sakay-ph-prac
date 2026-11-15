@@ -3,7 +3,7 @@
 **Project:** Sakay.ph — Isang App, Lahat ng Sakyan
 **Subject:** CCS670 Object-Oriented Software Development
 **Window:** 6 November 2026 → 6 December 2026 (31 days)
-**Today:** 11 November 2026 — calendar **Day 6**, work is at **Day 5** (one day behind)
+**Today:** 14 November 2026 — calendar **Day 9**, work is at **Day 7** (two days behind)
 
 > **This is a living document.** Update it at the end of every working session —
 > it takes five minutes and it is the evidence that you followed a process, which
@@ -14,30 +14,45 @@
 
 > ### Where I am right now
 >
-> **Next action:** **Step 1.06 — scaffold Django and Vue, prove the environment.**
-> Phase 1 Steps 1.01–1.05 are done and pushed. Docker Desktop is installed and its daemon
-> is running on the WSL 2 kernel. Start at
-> [Step 06](phase-1-repository/06-scaffold-and-verify.md).
+> **Next action:** **commit Step 1.06 and Step 2.01, then start Step 2.02** (settings,
+> `.env`, MySQL connection). Step 1.06's work is done and verified — Django and Vue both
+> serve, MySQL and Redis are healthy, and both servers were confirmed listening at the same
+> moment. Nothing is committed yet. Phase 1 Steps 1.01–1.05 are already pushed.
 >
-> **Verified state of the repository (checked 13 Nov):**
+> **Step 2.01's artefact-first requirement is now met.** Table 27 (`PLATFORM_CONFIG`) and
+> `RIDE_MODE.booking_fee` are in `database/schema_listing.md`, the `⚠ Pending` callout is
+> resolved, both EER sources carry them, and D-62's status in `consistency_report.md` §3.10
+> is `implemented (Phase 2)`. The `RIDE_MODE.booking_fee` **model column** is Step 02.03's.
+>
+> **Verified state of the repository (checked 14 Nov):**
 >
 > | Check | Actual |
 > |---|---|
-> | `technology_stack.md` | ✅ **complete** — §1–§7, no blank cells, no dangling refs |
+> | `technology_stack.md` | ✅ **complete** — §1–§7; §7 now carries the real pin-vs-resolved evidence table, and the ten `pin at install` cells in §2 are filled |
 > | `consistency_report.md` | ✅ D-01…D-61 fixed, plus **D-62** (A-13) and **D-63** (UUID storage) |
 > | D-62 propagation | ✅ done — 27 tables in every forward-looking document; historical rows left at 26 on purpose; the wrong `Step 02.04` cross-reference corrected to `02.03` |
-> | `schema_listing.md` | exists, **26 tables** — carries the "Pending: table 27 (D-62)" callout and the `CHAR(32)` UUID note (D-63); gains table 27 and `RIDE_MODE.booking_fee` in Phase 2 |
+> | `schema_listing.md` | ✅ **27 tables** — table 27 (`PLATFORM_CONFIG`) and `RIDE_MODE.booking_fee` added in Step 02.01; the `⚠ Pending` callout is resolved. The `CHAR(32)` UUID note (D-63) stands |
+> | `database/diagrams/*.puml` | ✅ **carry D-62** — `eer_development.puml` is now 27 entities and `eer_core.puml` 13, both with `PLATFORM_CONFIG` and `RIDE_MODE.booking_fee` |
+> | `database/diagrams/*.png` | ✅ **re-rendered 14 Nov** — `eer_development.png` **3805×3063** (27 entities) and `eer_core.png` **2356×2557** (13 entities) now carry `PLATFORM_CONFIG` and `RIDE_MODE.booking_fee`, confirmed by opening the rendered PNGs, not inferred. Neither dimension touches the 4096 clip (D-61). `eer_features.png` and `er_overview.png` correctly untouched — `eer_features.puml` is unchanged by D-62 and `er_overview.puml` does not model `RIDE_MODE`. Rendered via Docker `plantuml/plantuml:1.2026.10` (bundles Graphviz): `--entrypoint java … -DPLANTUML_LIMIT_SIZE=16384 -jar /opt/plantuml.jar -tpng -charset UTF-8` |
 > | Root `README.md` | ✅ **written** — Step 0.02 |
-> | `docs/plan/design-freeze.md` | ✅ **written** — Step 0.03; 13 limitations, 3 open questions; commit column **filled 13 Nov**, every artefact pointing at the commit that introduced it |
+> | `docs/plan/design-freeze.md` | ✅ **written** — Step 0.03; 13 limitations, 3 open questions; commit column filled 13 Nov |
 > | Git repository | ✅ **live** — `davedy-cit/sakay-ph-prac`, branch `main`, pushed |
 > | `CONTRIBUTING.md` | ✅ **written** — Step 1.05, commit `cfa6e7f` |
-> | `backend/`, `frontend/`, `tools/` | exist with `.gitkeep` placeholders — filled by Step 1.06 |
-> | `docker-compose.yml`, `requirements/`, `.venv/` | **missing** — Step 1.06 |
+> | `docker-compose.yml` | ✅ **written and validated** — `docker compose config --quiet` passes; MySQL 8.4 + Redis 7-alpine, healthchecks, named volumes, `utf8mb4` |
+> | `requirements/base.txt`, `requirements/dev.txt` | ✅ **written** — 17 exact pins; every one resolved to exactly the pinned version |
+> | `.venv/` | ✅ **created** — Python 3.14.9, 56 packages, pip upgraded to 26.3, no compiler invoked |
+> | `backend/` | ✅ **scaffolded** — Django 6.1.3 + DRF; `config/__init__.py` registers the PyMySQL shim; `manage.py check` → 0 issues; `runserver` returns HTTP 200 |
+> | `frontend/` | ✅ **scaffolded** — Vue 3.5.45 + Vite 8.3.8 + Tailwind 4.3.5; 380 packages; dev server returns HTTP 200 |
+> | `backend/apps/` | ✅ **Step 2.01 complete** — five apps with dotted `apps.py` names, all 13 enums in `core/enums.py`, the abstract models, and `PlatformConfig`; `manage.py check` → 0 issues. Created ahead of schedule, and its artefact-first requirement is now met |
+> | `docs/plan/install-log.txt` | ✅ **complete** — toolchain, backend and frontend install proof, services proof, and the 5 recorded deviations, above the raw pip output |
 > | Docker Desktop | ✅ **installed and running** — server 29.9.3, Compose v5.7.0, WSL 2 kernel 6.18.58.1 |
 > | Docker MySQL host port | **3307** — a native `MySQL84` service owns 3306, so `docker-compose.yml` maps `3307:3306` |
+> | Vite dev server | reachable at **`http://localhost:5173`** — it binds IPv6 loopback only, so `127.0.0.1:5173` does not answer |
 >
-> **Phase 0 is complete, and Phase 1 is five-sixths done.** Steps 1.01–1.05 are pushed.
-> Only Step 1.06 — the scaffold and the environment proof — remains.
+> **Phase 0 complete. Phase 1 complete but uncommitted. Step 2.01 complete but uncommitted.**
+> Steps 1.01–1.05 are pushed; Steps 1.06 and 2.01 are written and verified but not committed.
+> The plan is two days behind the calendar — M2 has five days left for Steps 02.02–02.09,
+> which is tight but workable, because Phase 2 is translation rather than design.
 
 ---
 
@@ -74,6 +89,63 @@ written; the *clone* half needs Phase 1.
 - Freeze commit column filled — each of the 14 artefacts points at its introducing commit
 - **First commit:** `f7fe035` · **Head:** `14812c1`
 
+### Day 7 — Thu 12 Nov (executed 13 Nov)
+
+**Step 1.06 — Scaffold Django and Vue, prove the environment — DONE**
+
+*Backend*
+
+- `.venv` created on Python 3.14.9; pip upgraded 26.2.2 → 26.3
+- `requirements/base.txt` (14 pins) and `requirements/dev.txt` (5 pins) written, each pin
+  carrying a comment explaining the choice
+- `pip install -r requirements/dev.txt` → **56 packages, exit 0, no compiler invoked.**
+  Every direct pin resolved to exactly the version pinned
+- `cryptography` 50.0.2 arrived as a prebuilt `cp311-abi3` wheel — the Rust-toolchain risk
+  this plan flagged for Python 3.14 did not materialise
+- `backend/config/__init__.py` registers `pymysql.install_as_MySQLdb()`, so PyMySQL is a
+  drop-in for `mysqlclient` with no C toolchain on Windows
+- `python manage.py check` → **0 issues**; `runserver` → HTTP 200
+
+*Frontend*
+
+- `create-vue` scaffold: Vue 3.5.45, Vite 8.3.8, Vue Router 5.5.0, Pinia 4.1.0
+- `npm install` 337 · `+ axios leaflet` 26 · `+ tailwindcss @tailwindcss/vite` 17 → **380**
+- **Vue Router 5 and Pinia 4 both exist.** The doubt recorded in stack doc §7 — that the
+  pins might name majors that do not exist — is settled in the project's favour
+- Dev server → HTTP 200 at `http://localhost:5173`
+
+*Services*
+
+- `docker-compose.yml` written and validated (`docker compose config --quiet` passes)
+- MySQL 8.4 and Redis 7-alpine both healthy; `character_set_server` = `utf8mb4`,
+  `collation_server` = `utf8mb4_unicode_ci`, `redis-cli ping` → `PONG`
+- Django and Vite confirmed listening **at the same moment**, not one after the other
+
+*Defect found and fixed*
+
+- A `$` in `MYSQL_PASSWORD` made Docker Compose interpolate it to an empty string while
+  django-environ read the file literally, so the container and the app held **different**
+  passwords. It surfaced as `ERROR 1045 (28000): Access denied for user
+  'sakayph'@'localhost'` — an error that points at the app, not at the password.
+  **Proven before fixing:** 50 characters in `.env`, 47 passed by Compose
+- Fixed by regenerating the password as 32 alphanumerics, then `docker compose down -v`
+  followed by `up -d`. The `down -v` is required: the MySQL entrypoint issues `CREATE USER`
+  only when the data directory is empty, so editing `.env` alone leaves the old password in
+  place and makes the fix look ineffective. Verified afterwards: `identical: True`, app user
+  connects
+- Documented in `.env.example` and in the Step 1.02 troubleshooting table
+
+*Documentation*
+
+- `technology_stack.md` §3 updated with the real Docker / Compose / pip versions, and the
+  "Two honest gaps" prose replaced — there are no gaps now
+- `technology_stack.md` §7 replaced its stub with the pin-versus-resolved evidence table for
+  all 56 backend and 15 frontend packages; §2's ten `pin at install` cells filled
+- `docs/plan/install-log.txt` gained a toolchain, install-proof, services-proof and
+  deviations header above the raw pip output
+
+**Commit:** *prepared and waiting — see the Step 1.06 commit*
+
 
 ---
 
@@ -87,7 +159,7 @@ written; the *clone* half needs Phase 1.
 | ✅ | [03 — Create the GitHub repository](phase-1-repository/03-github-repo.md) | 6 | `[x]` |
 | ✅ | [04 — First push](phase-1-repository/04-first-push.md) | 6 | `[x]` |
 | ✅ | [05 — Workflow conventions](phase-1-repository/05-workflow-conventions.md) | 7 | `[x]` |
-| ⬜ | [06 — Scaffold Django and Vue, prove the environment](phase-1-repository/06-scaffold-and-verify.md) | 7 | `[ ]` |
+| ✅ | [06 — Scaffold Django and Vue, prove the environment](phase-1-repository/06-scaffold-and-verify.md) | 7 | `[x]` |
 
 ---
 
@@ -96,7 +168,7 @@ written; the *clone* half needs Phase 1.
 | | Step | Day | Status |
 |---|---|---|---|
 | ⬜ | [00 — Phase overview](phase-2-database/00-overview.md) | 8 | `[ ]` |
-| ⬜ | [01 — Apps and shared conventions](phase-2-database/01-apps-and-shared-conventions.md) | 8 | `[ ]` |
+| ✅ | [01 — Apps and shared conventions](phase-2-database/01-apps-and-shared-conventions.md) | 8 | `[x]` |
 | ⬜ | [02 — Settings, `.env`, and Docker services](phase-2-database/02-settings-env-and-docker.md) | 9 | `[ ]` |
 | ⬜ | [03 — Models: `USER`, `PASSENGER`, `DRIVER`, `VEHICLE`, `LGU_UNIT`, `ACCREDITATION`](phase-2-database/03-models-accounts.md) | 10 | `[ ]` |
 | ⬜ | [04 — Models: `LOCATION`, `RIDE`, `RIDE_LEG`](phase-2-database/04-models-rides-core.md) | 11 | `[ ]` |
@@ -242,12 +314,13 @@ Every non-obvious choice, with the reason. This is the same discipline your
 way" into "I can defend why".
 
 > **Two numbering series, do not mix them up.** This log numbers its own decisions
-> **D-01…D-17** — they are choices about how you work and what tools you use.
+> **D-01…D-18** — they are choices about how you work and what tools you use.
 > `database/consistency_report.md` numbers **changes to the design** and continues
 > from the original audit: **D-62** is A-13 (pricing), **D-63** is the `char(32)` UUID
-> decision, and Phase 2's changes run on from **D-64**. Where a row here has a design
-> consequence, it names the consistency-report number it produced — D-15 → D-63,
-> D-17 → D-62. Both are now recorded, and both series are closed for Phase 0.
+> decision, **D-64** is the booking fee's value (14 Nov), and Phase 2's step-driven
+> changes run on from **D-65**. Where a row here has a design consequence, it names
+> the consistency-report number it produced — D-15 → D-63, D-17 → D-62, D-18 → D-64.
+> All three are recorded, and both series are closed for Phase 0.
 > `steps/phase-2-database/00-overview.md` holds the running table.
 
 | # | Date | Decision | Alternatives considered | Reason |
@@ -268,7 +341,8 @@ way" into "I can defend why".
 | D-14 | 10 Nov | **Simulated OTP**, returned in `DEBUG` | Real SMS gateway | A gateway costs money and needs a phone number |
 | D-15 | 10 Nov | **Accept `char(32)` UUIDs** on MySQL | Custom `UUIDField` mapped to `BINARY(16)` | Django's default; stores the same value and indexes well. `BINARY(16)` halves the storage but needs a hand-written migration and breaks `UUIDField`'s admin and form handling. **Recorded as D-63 in `database/consistency_report.md` §3.11** |
 | D-16 | 10 Nov | **English UI, Filipino feature names** | Add `vue-i18n` | The mockups already do this; translating 27 use cases earns no marks |
-| D-17 | 11 Nov | **A-13 pricing gap resolved:** booking fee → new `RIDE_MODE.booking_fee`; commission rate → new `PLATFORM_CONFIG` table (27th table); chain-leg discount → **dropped**; `mock3` arithmetic → **corrected to ₱51.00** | (a) Leave the gap undocumented and invent the rules in Phase 3; (b) hardcode the rates in `FareCalculator`; (c) drop the booking fee; (d) implement the chain discount via a new `RIDE.chain_discount` column | The mockups show all three behaviours, so the schema had to carry them or the shipped UI would promise prices the backend could not reproduce. Rates belong in data, not code, so a rate change is a row edit rather than a deploy — but the waiver stays in code, because that is a rule and only its number is configurable. The chain discount was dropped because **no rule anywhere justifies it**; implementing it would mean inventing a business rule and then defending the invention, and the one thing the design does say about chains is that a chain's fare is the sum of its legs. **Recorded as D-62 in `database/consistency_report.md` §3.10.** Implemented in Phase 2, Steps 02.01 and 02.03 |
+| D-17 | 11 Nov | **A-13 pricing gap resolved:** booking fee → new `RIDE_MODE.booking_fee`; commission rate → new `PLATFORM_CONFIG` table (27th table); chain-leg discount → **dropped**; `mock3` arithmetic → **corrected to ₱51.00** | (a) Leave the gap undocumented and invent the rules in Phase 3; (b) hardcode the rates in `FareCalculator`; (c) drop the booking fee; (d) implement the chain discount via a new `RIDE.chain_discount` column | The mockups show all three behaviours, so the schema had to carry them or the shipped UI would promise prices the backend could not reproduce. Rates belong in data, not code, so a rate change is a row edit rather than a deploy — but the waiver stays in code, because that is a rule and only its number is configurable. The chain discount was dropped because **no rule anywhere justifies it**; implementing it would mean inventing a business rule and then defending the invention, and the one thing the design does say about chains is that a chain's fare is the sum of its legs. **Recorded as D-62 in `database/consistency_report.md` §3.10.** Implemented in Phase 2 — `schema_listing.md` and both EER sources gained table 27 and `RIDE_MODE.booking_fee` in **Step 02.01**; the `booking_fee` model column lands in **Step 02.03** |
+| D-18 | 14 Nov | **Booking fee is ₱3.00 flat on all six modes, charged once per ride** | (a) per-mode values; (b) ₱0 seed relying on the DDL default | ₱3.00 is the only artefact-traceable number — `mock3_payment.png`'s "Booking fee ₱3.00" line — and a flat per-booking fee is how Philippine platforms actually charge. On a ₱15 jeepney leg the 10% commission is ₱1.50, so the flat fee is the platform's meaningful take on the cheap modes where a percentage earns almost nothing. Once per ride, not per leg: a three-leg chain pays ₱3 in total, and `FareCalculator` reads it off `RIDE.mode_code` once at booking. **Recorded as D-64 in `database/consistency_report.md` §3.12** — seed lands in Step 02.08 |
 
 ---
 
