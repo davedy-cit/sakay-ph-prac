@@ -87,8 +87,14 @@ Used in `PROGRESS.md` and in the step files themselves:
 ```
 
 Types: `feat` `fix` `docs` `test` `chore` `refactor` `style`
-Scopes: `repo` `stack` `db` `models` `rides` `pricing` `matching` `payments`
-`tracking` `sos` `auth` `ui` `api` `docs`
+Scopes: `repo` `stack` `config` `db` `models` `accounts` `rides` `pricing`
+`matching` `payments` `tracking` `sos` `safety` `auth` `ui` `api` `docs` `design`
+`uml` `plan`
+
+This list is the same one `CONTRIBUTING.md` carries. Keep the two identical — they
+drifted once (this one was missing `design`, `uml`, `plan`, `config`, `accounts` and
+`safety`), and a scope that exists in one document and not the other is a scope nobody
+can check a commit against.
 
 Example: `feat(pricing): apply surge multiplier before Pakyawan split`
 

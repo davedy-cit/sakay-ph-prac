@@ -35,12 +35,15 @@ change will take more than a day or will break the build while in progress.
 
 **Scopes**
 
-`repo` `stack` `db` `models` `rides` `pricing` `matching` `payments` `tracking`
-`sos` `auth` `ui` `api` `docs` `design` `uml` `plan`
+`repo` `stack` `config` `db` `models` `accounts` `rides` `pricing` `matching`
+`payments` `tracking` `sos` `safety` `auth` `ui` `api` `docs` `design` `uml` `plan`
 
 `design`, `uml` and `plan` are documentation scopes already in use in the Phase 1
-history (`docs(uml): …`, `docs(plan): …`). A scope may be omitted entirely when a
-commit spans the whole repository — the root README commit is an example.
+history (`docs(uml): …`, `docs(plan): …`). `config` is the Django settings package, and
+`accounts` and `safety` are two of the five app names — the Phase 2 step files prescribe
+all three (`feat(config)`, `feat(accounts)`, `feat(safety)`), so they belong in this
+list. A scope may be omitted entirely when a commit spans the whole repository — the
+root README commit is an example.
 
 **Examples**
 
