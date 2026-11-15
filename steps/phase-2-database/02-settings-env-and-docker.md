@@ -358,8 +358,7 @@ python manage.py shell
 ```
 
 ```python
-from django.db import connection
-
+from django.db import connection 
 with connection.cursor() as cur:
     # 1. What charset is the *connection* using?
     cur.execute("SHOW VARIABLES LIKE 'character_set_%'")
@@ -383,6 +382,20 @@ with connection.cursor() as cur:
     print("sent:", repr(probe))
     print("got :", repr(got))
     print("MATCH" if got == probe else "*** CORRUPTED ***")
+```
+
+**Paste the whole listing in one go, then press Enter once on an empty line.** `manage.py
+shell` is a REPL, and a REPL does not treat a block as finished until it reads a blank
+line. Paste this in pieces and the `with` is still open when your next statement arrives,
+so every line after the first raises `IndentationError: unexpected indent` — which looks
+like a syntax error in code that is perfectly correct. Paste the block, then press
+**Enter** on an empty line to close it and run.
+
+If that is awkward, save the listing as `backend/probe_encoding.py` and exec it, so the
+REPL never parses it line by line — then delete the file, so §8's `git status` stays clean:
+
+```powershell
+python manage.py shell -c "exec(open('probe_encoding.py', encoding='utf-8').read())"
 ```
 
 Expected: `character_set_client`, `character_set_connection` and
@@ -421,6 +434,10 @@ async def probe():
 asyncio.run(probe())
 print("channel layer: sent without error")
 ```
+
+**Same REPL rule as §6:** paste the whole block, then press **Enter** once on an empty
+line. The `async def` needs its blank line to close, exactly as the `with` did. Save it as
+`backend/probe_redis.py` and exec it if you would rather not fight the REPL.
 
 Expected: `cache: kumusta` and a clean send. A `ConnectionRefusedError` means the
 Redis container is not running.
