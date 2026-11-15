@@ -3,7 +3,9 @@
 **Project:** Sakay.ph — Isang App, Lahat ng Sakyan
 **Subject:** CCS670 Object-Oriented Software Development
 **Window:** 6 November 2026 → 6 December 2026 (31 days)
-**Today:** 14 November 2026 — calendar **Day 9**, work is at **Day 7** (two days behind)
+**Today:** 15 November 2026 — calendar **Day 10**. Steps 02.01 and 02.02 are done, so the
+ladder stands at **one day** behind: Step 02.03 is Day 10's own step, and starting it today
+is what closes the gap
 
 > **This is a living document.** Update it at the end of every working session —
 > it takes five minutes and it is the evidence that you followed a process, which
@@ -14,22 +16,33 @@
 
 > ### Where I am right now
 >
-> **Next action:** **commit Step 1.06 and Step 2.01, then start Step 2.02** (settings,
-> `.env`, MySQL connection). Step 1.06's work is done and verified — Django and Vue both
-> serve, MySQL and Redis are healthy, and both servers were confirmed listening at the same
-> moment. Nothing is committed yet. Phase 1 Steps 1.01–1.05 are already pushed.
+> **Next action:** **Step 2.03** — the account models: `USER`, `PASSENGER`, `DRIVER`,
+> `VEHICLE`, `LGU_UNIT`, `ACCREDITATION`, plus `RIDE_MODE` written first so `Vehicle.mode`
+> resolves ([03 — Models: accounts](phase-2-database/03-models-accounts.md)).
+> Nothing is uncommitted: Steps 1.06, 2.01 and 2.02 are all committed and pushed.
+>
+> **Pushed 15 Nov** — the three-commit backlog split kept the design commit an ancestor of
+> the code commit, so the artefacts still precede the code in history:
+>
+> | Commit | What it carries |
+> |---|---|
+> | `9e59550` | `chore(repo)` — docker services, tooling, frontend scaffold, install log |
+> | `2e6f216` | `docs(design)` — D-62 across the artefacts, **D-64** recorded, both EER PNGs re-rendered |
+> | `d13d34b` | `feat(repo)` — the Django backend: five apps, 13 enums, shared conventions |
+> | `d137254` | `feat(config)` — `settings.py` wired to `.env`, MySQL 8.4, Redis, DRF and Channels |
 >
 > **Step 2.01's artefact-first requirement is now met.** Table 27 (`PLATFORM_CONFIG`) and
 > `RIDE_MODE.booking_fee` are in `database/schema_listing.md`, the `⚠ Pending` callout is
 > resolved, both EER sources carry them, and D-62's status in `consistency_report.md` §3.10
-> is `implemented (Phase 2)`. The `RIDE_MODE.booking_fee` **model column** is Step 02.03's.
+> is `implemented (Phase 2)`. The `RIDE_MODE.booking_fee` **model column** is Step 02.03's;
+> its **value** — ₱3.00 flat, charged once per ride — is **D-64**, decided 14 Nov (§3.12).
 >
-> **Verified state of the repository (checked 14 Nov):**
+> **Verified state of the repository (checked 15 Nov):**
 >
 > | Check | Actual |
 > |---|---|
 > | `technology_stack.md` | ✅ **complete** — §1–§7; §7 now carries the real pin-vs-resolved evidence table, and the ten `pin at install` cells in §2 are filled |
-> | `consistency_report.md` | ✅ D-01…D-61 fixed, plus **D-62** (A-13) and **D-63** (UUID storage) |
+> | `consistency_report.md` | ✅ D-01…D-61 fixed, plus **D-62** (A-13), **D-63** (UUID storage) and **D-64** (the booking fee's value, §3.12) |
 > | D-62 propagation | ✅ done — 27 tables in every forward-looking document; historical rows left at 26 on purpose; the wrong `Step 02.04` cross-reference corrected to `02.03` |
 > | `schema_listing.md` | ✅ **27 tables** — table 27 (`PLATFORM_CONFIG`) and `RIDE_MODE.booking_fee` added in Step 02.01; the `⚠ Pending` callout is resolved. The `CHAR(32)` UUID note (D-63) stands |
 > | `database/diagrams/*.puml` | ✅ **carry D-62** — `eer_development.puml` is now 27 entities and `eer_core.puml` 13, both with `PLATFORM_CONFIG` and `RIDE_MODE.booking_fee` |
@@ -43,16 +56,18 @@
 > | `.venv/` | ✅ **created** — Python 3.14.9, 56 packages, pip upgraded to 26.3, no compiler invoked |
 > | `backend/` | ✅ **scaffolded** — Django 6.1.3 + DRF; `config/__init__.py` registers the PyMySQL shim; `manage.py check` → 0 issues; `runserver` returns HTTP 200 |
 > | `frontend/` | ✅ **scaffolded** — Vue 3.5.45 + Vite 8.3.8 + Tailwind 4.3.5; 380 packages; dev server returns HTTP 200 |
+> | `backend/config/settings.py` | ✅ **Step 2.02 complete** — every secret read from the root `.env` through django-environ; MySQL 8.4.13 on host port 3307; utf8mb4 proven on connection, server and collation with the round-trip returning **MATCH**; Redis proven on **db 1** (cache) and **db 0** (channel layer); `check` → 0 issues. Commit `d137254` |
+> | `.env` | ✅ **present and ignored** — `git check-ignore -v .env` resolves to `.gitignore:5`; no secret is in the tree |
 > | `backend/apps/` | ✅ **Step 2.01 complete** — five apps with dotted `apps.py` names, all 13 enums in `core/enums.py`, the abstract models, and `PlatformConfig`; `manage.py check` → 0 issues. Created ahead of schedule, and its artefact-first requirement is now met |
 > | `docs/plan/install-log.txt` | ✅ **complete** — toolchain, backend and frontend install proof, services proof, and the 5 recorded deviations, above the raw pip output |
 > | Docker Desktop | ✅ **installed and running** — server 29.9.3, Compose v5.7.0, WSL 2 kernel 6.18.58.1 |
 > | Docker MySQL host port | **3307** — a native `MySQL84` service owns 3306, so `docker-compose.yml` maps `3307:3306` |
 > | Vite dev server | reachable at **`http://localhost:5173`** — it binds IPv6 loopback only, so `127.0.0.1:5173` does not answer |
 >
-> **Phase 0 complete. Phase 1 complete but uncommitted. Step 2.01 complete but uncommitted.**
-> Steps 1.01–1.05 are pushed; Steps 1.06 and 2.01 are written and verified but not committed.
-> The plan is two days behind the calendar — M2 has five days left for Steps 02.02–02.09,
-> which is tight but workable, because Phase 2 is translation rather than design.
+> **Phase 0 complete. Phase 1 complete. Steps 2.01 and 2.02 complete — all pushed.**
+> The plan is **one day** behind the calendar — M2 still has five days for Steps
+> 02.03–02.09, which is workable because Phase 2 is translation rather than design.
+> Django can now talk to MySQL and Redis; there are still no application tables.
 
 ---
 
@@ -144,8 +159,95 @@ written; the *clone* half needs Phase 1.
 - `docs/plan/install-log.txt` gained a toolchain, install-proof, services-proof and
   deviations header above the raw pip output
 
-**Commit:** *prepared and waiting — see the Step 1.06 commit*
+**Commit:** `9e59550` (tooling and scaffold) and `d13d34b` (the backend) — pushed 15 Nov
+with the Step 2.01 work, once the backlog was split into three commits
 
+---
+
+### Day 8 — Fri 13 Nov (executed 13–14 Nov)
+
+**Step 2.01 — apps and shared conventions — DONE**
+
+- Created `backend/apps/` with `core`, `accounts`, `rides`, `payments`, `safety`; every
+  `apps.py` carries the dotted `name = "apps.<app>"`, not the bare app name — the single
+  most common failure in the step, avoided by checking all five
+- All **13 domain enums** written once in `apps/core/enums.py` as `TextChoices`, stored as
+  short VARCHAR codes rather than MySQL `ENUM`, so a new ride mode needs no migration
+- Shared abstractions in `apps/core/models.py`: `UUIDModel`, `TimeStampedModel`,
+  `MoneyField` (so no model can reach for `FloatField` by accident) and `CoordinateField`
+  (`DECIMAL(9,6)`)
+- `apps/core/constants.py` holds only structural values; anything an operator would change
+  belongs in `PLATFORM_CONFIG` instead
+- **Decision:** the PK attribute is named `id` (the Django idiom) while `db_table` keeps
+  the schema's `UPPER_SNAKE` name, so the database still reads like the diagrams
+- Added `PlatformConfig` — **table 27**, the D-62 key-value table — and marked D-62's
+  status in `consistency_report.md` §3.10 `implemented (Phase 2)`
+- `python manage.py check` → **0 issues**
+
+*The artefact-first requirement, completed 14 Nov*
+
+- Step 2.01 originally said "schema listing and consistency report" and never mentioned
+  the diagrams, so the first run left `eer_development.png` showing **26** entities while
+  the listing said 27 — and `schema_listing.md`'s header asserts every table appears in
+  the diagram, which made that header false. Found on 14 Nov not by reading but by
+  **opening the PNG**
+- Both EER sources gained `PLATFORM_CONFIG` and `RIDE_MODE.booking_fee`; both PNGs were
+  re-rendered with the pinned `plantuml/plantuml:1.2026.10` image (it bundles Graphviz;
+  no jar lives in the repo and `dot` is not on `PATH`), with `-DPLANTUML_LIMIT_SIZE=16384`
+  and `-charset UTF-8`. `eer_development.png` 3504×3332 → **3805×3063** (27 entities),
+  `eer_core.png` 2065×2773 → **2356×2557** (13)
+- Verified by opening the renders, **not** by the exit code — a clipped render still
+  writes a PNG and exits 0 (D-61)
+- The step file now carries the instruction it should always have had, and
+  `CONTRIBUTING.md` records the render recipe so the next diagram change has one
+
+**Commit:** `2e6f216` (the design artefacts, including both PNGs) and `d13d34b` (the
+backend) — pushed 15 Nov, after the two-day backlog was split into three commits so the
+design commit is an ancestor of the code commit
+
+---
+
+### Day 9 — Sat 14 Nov (executed 15 Nov)
+
+**Step 2.02 — settings, environment and database connection — DONE**
+
+- `settings.py` reads every secret and every environment-specific value from the
+  repository-root `.env` through django-environ, so nothing in the file changes between
+  this machine and the submission build. `config/__init__.py` still carries the PyMySQL
+  shim from Step 1.06 — the one thing that keeps `Error loading MySQLdb module` away
+- MySQL 8.4 connection proven: `connection.vendor` → `mysql` and
+  `connection.mysql_version` → `(8, 4, 13)`, on **port 3307** — the compose mapping,
+  because a native `MySQL84` service owns 3306 on this machine
+- **The encoding test, which is the one that actually matters.** `character_set_client`,
+  `_connection`, `_results` and `_server` are all `utf8mb4`, and `collation_server` is
+  `utf8mb4_unicode_ci`. `Barangay Peñaflor ₱25.00 🚐🛺` round-tripped through a temporary
+  `utf8mb4` table with identical codepoints (`0xf1`, `0x20b1`, `0x1f690`, `0x1f6fa`) and
+  27 of 27 characters — **MATCH**. `character_set_system` reads `utf8mb3`, which is MySQL's
+  own metadata charset and not something the app can or needs to change
+- Redis proven on **both** paths: `cache.get("probe")` → `kumusta`, with the raw key
+  `sakayph:1:probe` visible in **db 1**, and the channel-layer `send` completing without
+  error against **db 0**. The split is D-11's, so a cache flush cannot drop a live
+  WebSocket group
+- Two `DATABASES["default"]["OPTIONS"]` keys are load-bearing and both are in: `charset:
+  utf8mb4` — the *connection* charset, which is separate from the server's — and
+  `init_command: SET sql_mode='STRICT_TRANS_TABLES'`, without which MySQL truncates an
+  over-long value with a warning instead of raising, which is a silent data-loss bug
+- **The §6 test was run as a script, not pasted into `manage.py shell`.** The interactive
+  console needs a blank line to close a block, so a multi-line paste raises
+  `IndentationError` on every line after the first — exactly what the first attempt did.
+  `manage.py shell -c "exec(open(...).read())"` runs the same code without the console
+  parsing it line by line
+- `.env` confirmed still ignored: `git check-ignore -v .env` resolves to `.gitignore:5`
+- `python manage.py check` → **0 issues**. `migrate` deliberately not run — there are no
+  application models yet, so it would only create Django's own tables
+
+*Also decided on 14 Nov, while Step 02.01's artefacts were being finished:* the booking
+fee's **value**. D-62 created `RIDE_MODE.booking_fee` and left it open; it is now **₱3.00
+flat on all six modes, charged once per ride** — recorded as **D-64** in
+`consistency_report.md` §3.12 and as **D-18** in the decision log. The seed lands in
+Step 02.08; the arithmetic is Phase 3's.
+
+**Commit:** `d137254`
 
 ---
 
@@ -169,7 +271,7 @@ written; the *clone* half needs Phase 1.
 |---|---|---|---|
 | ⬜ | [00 — Phase overview](phase-2-database/00-overview.md) | 8 | `[ ]` |
 | ✅ | [01 — Apps and shared conventions](phase-2-database/01-apps-and-shared-conventions.md) | 8 | `[x]` |
-| ⬜ | [02 — Settings, `.env`, and Docker services](phase-2-database/02-settings-env-and-docker.md) | 9 | `[ ]` |
+| ✅ | [02 — Settings, `.env`, and Docker services](phase-2-database/02-settings-env-and-docker.md) | 9 | `[x]` |
 | ⬜ | [03 — Models: `USER`, `PASSENGER`, `DRIVER`, `VEHICLE`, `LGU_UNIT`, `ACCREDITATION`](phase-2-database/03-models-accounts.md) | 10 | `[ ]` |
 | ⬜ | [04 — Models: `LOCATION`, `RIDE`, `RIDE_LEG`](phase-2-database/04-models-rides-core.md) | 11 | `[ ]` |
 | ⬜ | [05 — Models: surge, Pakyawan, tracking, cancellation, rating](phase-2-database/05-models-rides-features.md) | 12 | `[ ]` |
@@ -280,8 +382,8 @@ gap that raises questions.
 | 5 | Tue 10 Nov | Step 0.01 — `technology_stack.md` complete (§1–§7); A-13 decided and recorded as D-62; D-62 propagated to 27 across 16 files · Step 0.02 — root `README.md` · Step 0.03 — `design-freeze.md`; D-63 recorded. **Phase 0 closed.** *(Worked 11 Nov.)* | ✅ | — | — |
 | 6 | Wed 11 Nov | | | | |
 | 7 | Thu 12 Nov | | | | |
-| 8 | Fri 13 Nov | | | | |
-| 9 | Sat 14 Nov | | | | |
+| 8 | Fri 13 Nov | Step 2.01 — five apps, all 13 enums as `TextChoices`, shared abstract models, `PlatformConfig` (table 27); D-62's artefact-first requirement completed 14 Nov (schema listing + both EER sources + both PNGs re-rendered). *(Worked 13–14 Nov.)* | ✅ | `2e6f216` `d13d34b` | — |
+| 9 | Sat 14 Nov | Step 2.02 — `.env`-driven settings; MySQL 8.4.13 proven on host port 3307; utf8mb4 on connection, server and collation with the `Barangay Peñaflor ₱25.00 🚐🛺` round-trip returning **MATCH**; Redis proven on both paths (cache db 1, channel layer db 0); `check` → 0 issues. Also 14 Nov: the booking fee's value decided — **D-64**, ₱3.00 flat, charged once per ride (log **D-18**). *(Worked 15 Nov.)* | ✅ | `d137254` | — |
 | 10 | Sun 15 Nov | | | | |
 | 11 | Mon 16 Nov | | | | |
 | 12 | Tue 17 Nov | | | | |
