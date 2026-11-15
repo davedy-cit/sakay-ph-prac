@@ -55,8 +55,8 @@ already decided" below.
 
 | | Step | Day | What exists when it's done |
 |---|---|---|---|
-| ⬜ | [01 — Apps and shared conventions](01-apps-and-shared-conventions.md) | 8 | Five Django apps; every domain enum as a `TextChoices`; the UUID-PK and timestamp conventions every model follows; `PLATFORM_CONFIG` (table 27, D-62) |
-| ⬜ | [02 — Settings, environment and database connection](02-settings-env-and-docker.md) | 9 | `settings.py` reads `.env`; Django connects to MySQL 8.4 and answers `SELECT 1` |
+| ✅ | [01 — Apps and shared conventions](01-apps-and-shared-conventions.md) | 8 | Five Django apps; every domain enum as a `TextChoices`; the UUID-PK and timestamp conventions every model follows; `PLATFORM_CONFIG` (table 27, D-62) |
+| ✅ | [02 — Settings, environment and database connection](02-settings-env-and-docker.md) | 9 | `settings.py` reads `.env`; Django connects to MySQL 8.4 and answers `SELECT 1` |
 | ⬜ | [03 — Models: accounts](03-models-accounts.md) | 10 | USER, PASSENGER, DRIVER, VEHICLE, LGU_UNIT, ACCREDITATION — tables 1–6 — plus RIDE_MODE (table 7, written first so `Vehicle.mode` resolves) |
 | ⬜ | [04 — Models: rides core](04-models-rides-core.md) | 11 | LOCATION, RIDE, RIDE_LEG — tables 10–12, including the weak entity. (`RIDE_MODE` already landed in Step 03) |
 | ⬜ | [05 — Models: rides features](05-models-rides-features.md) | 12 | SURGE_PERIOD, PAKYAWAN_GROUP, PASSENGER_PREFERRED_MODE, TRIP_TRACKING, CANCELLATION, RATING — tables 8, 13, 23–26 |
