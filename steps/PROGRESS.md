@@ -3,12 +3,12 @@
 **Project:** Sakay.ph — Isang App, Lahat ng Sakyan
 **Subject:** CCS670 Object-Oriented Software Development
 **Window:** 6 November 2026 → 6 December 2026 (31 days)
-**Today:** 19 November 2026 — calendar **Day 14**. Steps 02.03, 02.04 and 02.05 are
-done, verified against the live database and pushed. They were Days 10, 11 and 12's
-own steps, so the ladder stands at **three days** behind: Steps 02.06–02.09 remain and
-the Phase 2 window (Days 8–14) ends today. Phase 2 is translation rather than design,
-so the remaining steps are mechanical — but the calendar now needs an explicit
-decision, and the ladder in `docs/plan/02-roadmap.md` is where that is made
+**Today:** 19 November 2026 — calendar **Day 14**. Steps 02.03–02.06 are done,
+verified against the live database and pushed. They were Days 10–13's own steps, so
+the ladder stands at **two days** behind: Steps 02.07–02.09 remain and the Phase 2
+window (Days 8–14) ends today. Phase 2 is translation rather than design, so the
+remaining steps are mechanical — but the calendar now needs an explicit decision,
+and the ladder in `docs/plan/02-roadmap.md` is where that is made
 
 > **This is a living document.** Update it at the end of every working session —
 > it takes five minutes and it is the evidence that you followed a process, which
@@ -19,10 +19,10 @@ decision, and the ladder in `docs/plan/02-roadmap.md` is where that is made
 
 > ### Where I am right now
 >
-> **Next action:** **Step 2.06** — the money models: `PAYMENT`, `WALLET`,
-> `WALLET_TRANSACTION`, `RECEIPT` and `FARE_SHARE` (the D-70 surrogate-key
-> substitution applies there too)
-> ([06 — Models: payments](phase-2-database/06-models-payments.md)).
+> **Next action:** **Step 2.07** — the safety models: `SOS_ALERT`,
+> `TRUSTED_CONTACT`, `SOS_NOTIFICATION` (the D-70 surrogate-key substitution
+> applies there too) and `USER_NOTIFICATION`
+> ([07 — Models: safety](phase-2-database/07-models-safety.md)).
 > The working tree is clean apart from this log update.
 >
 > **Pushed 19 Nov** — the Step 2.03 pair kept the design commit an ancestor of the code
@@ -35,6 +35,8 @@ decision, and the ladder in `docs/plan/02-roadmap.md` is where that is made
 > | `11f6fc0` | `feat(rides)` — `Location`, `Ride`, `RideLeg` (weak entity, D-70) + the proof script; `bb78f30`/`b599596` carried the docs catch-up |
 > | `1d488ad` | `feat(rides)` — the six feature models (`SurgePeriod`, `PakyawanGroup`, `PassengerPreferredMode`, `TripTracking`, `Cancellation`, `Rating`) incl. the uncommented `RideLeg.surge`, migration `0003` |
 > | `27aa9b8` | `test(rides)` — the Step 2.05 nine-check proof script |
+> | `42252be` | `feat(payments)` — `PaymentMethodLookup`, `Wallet`, `Payment`, `Receipt`, `FareShare`, `WalletTxn`, `DriverPayout`, migration `0001` |
+> | `6419f1e` | `test(payments)` — the Step 2.06 split-and-ledger proof script |
 > | `9e59550` | `chore(repo)` — docker services, tooling, frontend scaffold, install log |
 > | `2e6f216` | `docs(design)` — D-62 across the artefacts, **D-64** recorded, both EER PNGs re-rendered |
 > | `d13d34b` | `feat(repo)` — the Django backend: five apps, 13 enums, shared conventions |
@@ -74,6 +76,7 @@ decision, and the ladder in `docs/plan/02-roadmap.md` is where that is made
 > | Vite dev server | reachable at **`http://localhost:5173`** — it binds IPv6 loopback only, so `127.0.0.1:5173` does not answer |
 > | `backend/apps/accounts/` | ✅ **Step 2.03 complete** — `User` (`AbstractBaseUser` + `PermissionsMixin`, `USERNAME_FIELD = "phone"`, `is_active` derived from `account_status`), `UserManager` (`use_in_migrations = True`), `Passenger`, `Driver`, `Vehicle`, `LGUUnit`, `Accreditation`; D-65 applied throughout (field `id`, column `<entity>_id` via `db_column`). Commit `2fbc2ec` |
 > | `backend/apps/rides/` | ✅ **Steps 2.04–2.05 complete** — `Location`, `Ride`, `RideLeg` (weak entity: surrogate `id` + `uq_rideleg_ride_legno`, **D-70** §3.15) plus the six feature models: `SurgePeriod` (nullable LGU, `active_at()` picks the highest multiplier among overlapping windows), `PakyawanGroup` (capacity constraints), `PassengerPreferredMode` (D-70 substitution), `TripTracking` (the only `BigAutoField` — high-volume time series), `Cancellation`, `Rating` (unary relationship, two `related_name`s; `save()` refreshes the cached `Driver.rating` via `.update()`); `RideLeg.surge` FK live. Nine-check proof passed; `SHOW CREATE TABLE` verified RATING (two USER FKs), TRIP_TRACKING (`bigint` PK), RIDE_LEG (`surge_id` FK). Commits `11f6fc0`, `1d488ad`, `27aa9b8` |
+> | `backend/apps/payments/` | ✅ **Step 2.06 complete** — `PaymentMethodLookup`, `Wallet` (`ck_wallet_balance_nonneg`, UNIQUE passenger), `Payment` (1 : 0..1 ride), `Receipt` (human-readable PK `SKY-YYYYMMDD-NNNN`, copied total), `FareShare` (`uq_fareshare_payment_passenger` — D-70's fourth substitution; divisor frozen in `passenger_count`), `WalletTxn` (append-only ledger, stored `balance_after`), `DriverPayout`. Split proof: even 4-way and uneven 3-way both sum exactly ₱100.00 (ROUND_HALF_UP + remainder on first share); 8 constraint checks all green. Commits `42252be`, `6419f1e` |
 > | Live MySQL (checked 19 Nov) | ✅ **verified against the design** — 7 app tables + `USER_groups`/`USER_user_permissions` + Django's own tables; `SHOW CREATE TABLE` for `USER`/`PASSENGER`/`DRIVER`/`VEHICLE`/`ACCREDITATION`/`LGU_UNIT`/`RIDE_MODE`/`PLATFORM_CONFIG` matches `schema_listing.md` column for column, including the `CHAR(32)` keys (D-63), the `phone` UNIQUE (D-69) and the `uq_accreditation_driver_lgu` composite. `createsuperuser` on phone and the phone-login proof both passed |
 >
 > **Phase 0 complete. Phase 1 complete. Steps 2.01–2.04 complete — all pushed.**
@@ -344,6 +347,30 @@ Step 02.08; the arithmetic is Phase 3's.
 - **Commits:** `1d488ad` (models + migration), `27aa9b8` (proof script), and the
   docs fold-ins to the step file in this tracker's commit
 
+**Step 2.06 — payment models — DONE**
+
+- Seven models written into the `payments` app: `PaymentMethodLookup`, `Wallet`,
+  `Payment`, `Receipt`, `FareShare`, `WalletTxn`, `DriverPayout`; migration
+  `0001_initial` applied clean
+- **The money rules live where SQL can put them.** `ck_wallet_balance_nonneg`
+  guards every wallet; `uq_fareshare_payment_passenger` is D-70's fourth and
+  final substitution; `passenger_count` freezes the split divisor at split time;
+  `Receipt.total_amount` is copied, not joined — an immutable snapshot.
+  Documented limitation: "shares sum to the fare" is a service-layer invariant
+  (Phase 3) — SQL cannot assert a cross-row sum
+- **Split proof passed both ways:** even 4 × 25.00 and uneven 33.34 + 33.33 +
+  33.33, both summing to exactly ₱100.00 — ROUND_HALF_UP with the remainder
+  pushed onto the first share. All 8 constraint checks green; receipt numbering
+  produced `SKY-20261119-0001` → `-0002`; ledger head matched the wallet balance
+- **The proof caught a second step-file bug class:** the cleanup block deleted
+  the ride first, but `Payment.ride` and `PakyawanGroup.ride` are PROTECT —
+  `ProtectedError`. The PROTECT-aware order (receipts → payments → ledger →
+  payouts → rides → users) now lives in the step file, the proof script, and a
+  new "If it goes wrong" row
+- No D-number: pure translation; D-70 already covers FARE_SHARE
+- **Commits:** `42252be` (models + migration), `6419f1e` (proof script), docs
+  fold-ins in this tracker's commit
+
 ---
 
 ### Phase 1 — Repository · Days 6–7 · 11–12 Nov
@@ -370,6 +397,7 @@ Step 02.08; the arithmetic is Phase 3's.
 | ✅ | [03 — Models: `USER`, `PASSENGER`, `DRIVER`, `VEHICLE`, `LGU_UNIT`, `ACCREDITATION`](phase-2-database/03-models-accounts.md) | 10 | `[x]` |
 | ✅ | [04 — Models: `LOCATION`, `RIDE`, `RIDE_LEG`](phase-2-database/04-models-rides-core.md) | 11 | `[x]` |
 | ✅ | [05 — Models: surge, Pakyawan, tracking, cancellation, rating](phase-2-database/05-models-rides-features.md) | 12 | `[x]` |
+| ✅ | [06 — Models: payment, wallet, receipt, payout](phase-2-database/06-models-payments.md) | 13 | `[x]` |
 | ⬜ | [06 — Models: payment, wallet, receipt, payout](phase-2-database/06-models-payments.md) | 13 | `[ ]` |
 | ⬜ | [07 — Models: SOS alert, trusted contacts, notifications](phase-2-database/07-models-safety.md) | 13 | `[ ]` |
 | ⬜ | [08 — Migrations, admin, seed](phase-2-database/08-migrations-seed-and-admin.md) | 14 | `[ ]` |
@@ -483,7 +511,7 @@ gap that raises questions.
 | 11 | Mon 16 Nov | | | | |
 | 12 | Tue 17 Nov | | | | |
 | 13 | Wed 18 Nov | | | | |
-| 14 | Thu 19 Nov | Step 2.03 — accounts models: `USER`, `PASSENGER`, `DRIVER`, `VEHICLE`, `LGU_UNIT`, `ACCREDITATION` + `RIDE_MODE` migrated; `AUTH_USER_MODEL = accounts.User`, phone login proven live; D-66..D-69 recorded (§3.14), both EER PNGs re-rendered; D-65's `db_column` convention back-filled into Steps 02.04–02.07. Full integrity check against the live DB, listing, EER and class diagrams — all match. · Step 2.04 — rides core: `LOCATION`, `RIDE`, `RIDE_LEG` migrated; composite key enforced as surrogate `id` + `uq_rideleg_ride_legno` (**D-70**, §3.15); seven-print shell proof + `SHOW CREATE TABLE` both verified. · Step 2.05 — rides features: `SURGE_PERIOD`, `PAKYAWAN_GROUP`, `PASSENGER_PREFERRED_MODE`, `TRIP_TRACKING`, `CANCELLATION`, `RATING` migrated, `RideLeg.surge` FK live; nine-check proof passed (caught and fixed a step-file fixture bug — CAR fallback made a duplicate preferred mode); RATING's two-USER-FK DDL verified. *(Worked 17–19 Nov.)* | ✅ | `e8e0afa` `2fbc2ec` `bb78f30` `11f6fc0` `1d488ad` `27aa9b8` | B-01 B-02 B-03 |
+| 14 | Thu 19 Nov | Step 2.03 — accounts models: `USER`, `PASSENGER`, `DRIVER`, `VEHICLE`, `LGU_UNIT`, `ACCREDITATION` + `RIDE_MODE` migrated; `AUTH_USER_MODEL = accounts.User`, phone login proven live; D-66..D-69 recorded (§3.14), both EER PNGs re-rendered; D-65's `db_column` convention back-filled into Steps 02.04–02.07. Full integrity check against the live DB, listing, EER and class diagrams — all match. · Step 2.04 — rides core: `LOCATION`, `RIDE`, `RIDE_LEG` migrated; composite key enforced as surrogate `id` + `uq_rideleg_ride_legno` (**D-70**, §3.15); seven-print shell proof + `SHOW CREATE TABLE` both verified. · Step 2.05 — rides features: `SURGE_PERIOD`, `PAKYAWAN_GROUP`, `PASSENGER_PREFERRED_MODE`, `TRIP_TRACKING`, `CANCELLATION`, `RATING` migrated, `RideLeg.surge` FK live; nine-check proof passed (caught and fixed a step-file fixture bug — CAR fallback made a duplicate preferred mode); RATING's two-USER-FK DDL verified. · Step 2.06 — payments: seven money models migrated; split proof sums exactly both even (4-way) and uneven (3-way); wallet CHECK, composite share key (D-70) and ledger `balance_after` all verified in the DDL. *(Worked 17–19 Nov.)* | ✅ | `e8e0afa` `2fbc2ec` `bb78f30` `11f6fc0` `1d488ad` `27aa9b8` `42252be` `6419f1e` | B-01 B-02 B-03 |
 | 15 | Fri 20 Nov | | | | |
 | 16 | Sat 21 Nov | | | | |
 | 17 | Sun 22 Nov | | | | |

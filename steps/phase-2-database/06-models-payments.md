@@ -442,7 +442,35 @@ itself because both are string references inside one app.
 ### 4. Prove a Pakyawan split adds up (~45 min)
 
 The split arithmetic is the part most likely to be wrong, and this is the last
-chance to catch it before it is buried under an API. In `manage.py shell`:
+chance to catch it before it is buried under an API.
+
+**Run it as a file, not pasted into the interactive shell.** Same as Steps 2.04
+and 2.05: save the script blocks below as `backend/prove_payments.py` (minus the
+final `exit()`, and run them as **one** script — the "Continue in the same
+shell" blocks share variables), then:
+
+```powershell
+Set-Location backend
+..\.venv\Scripts\python.exe manage.py shell -c "exec(open('prove_payments.py', encoding='utf-8').read())"
+```
+
+**Rerun gotcha:** the phones (`0917000002x`, `0917000004x`, `09170000030`) are
+UNIQUE. If the script dies partway, clear the leftovers before rerunning — in
+PROTECT-safe order (receipts → payments → wallet txns → payouts → rides → users).
+The cleanup block at the end already does this; see the note on it below.
+
+**The verify checklist asks for an uneven split, so prove both:** the 4-way
+₱100.00 below divides evenly; add a second fixture with **3** passengers on
+₱100.00 (`33.34 + 33.33 + 33.33 = 100.00`) — that is the case where naive
+per-share rounding fails. The remainder line below is what keeps the sum exact.
+
+**The cleanup block deletes in PROTECT-aware order.** `Payment.ride` and
+`PakyawanGroup.ride` are PROTECT — deleting the ride first (the naive order)
+raises `ProtectedError`. Receipt before payment (`Receipt.payment` PROTECT),
+ledger entries before the users whose cascade would take the wallets
+(`WalletTxn.wallet` PROTECT). `FareShare` cascades with its payment.
+
+In `manage.py shell`:
 
 ```python
 from decimal import Decimal, ROUND_HALF_UP
@@ -507,6 +535,34 @@ for p, amt in zip(paxs, shares):
 recomputed = sum(s.share_amount for s in payment.shares.all())
 print("fare:", total, "| shares:", [str(s) for s in shares], "| sum:", recomputed)
 print("SPLIT BALANCES:", recomputed == total)               # True
+```
+
+**Then prove the uneven case the checklist asks for** — 3 passengers on ₱100.00,
+where naive rounding gives 99.99 (append to the same script):
+
+```python
+pax3 = []
+for i in range(3):
+    u = User.objects.create_user(phone=f"0917000004{i}", password="t",
+                                 full_name=f"Tresharer {i+1}", user_role=UserRole.PASSENGER)
+    p = Passenger.objects.create(user=u, home_address="X", gcash_number=f"0917000004{i}")
+    pax3.append(p)
+ride3 = Ride.objects.create(passenger=pax3[0], mode=tricycle, pickup_location=a,
+                            dropoff_location=b, status=RideStatus.COMPLETED)
+RideLeg.objects.create(ride=ride3, leg_no=1, mode=tricycle, origin_location=a,
+                       dest_location=b, fare=Decimal("100.00"))
+ride3.recompute_chain_flags()
+payment3 = Payment.objects.create(ride=ride3, payer=pax3[0], method=gcash,
+                                  amount=ride3.final_fare, status=PaymentStatus.COMPLETED)
+base3 = (payment3.amount / 3).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+shares3 = [base3] * 3
+shares3[0] += payment3.amount - (base3 * 3)
+for p, amt in zip(pax3, shares3):
+    FareShare.objects.create(payment=payment3, passenger=p, group=group,
+                             passenger_count=3, share_amount=amt)
+recomputed3 = sum(s.share_amount for s in payment3.shares.all())
+print("uneven shares:", [str(s) for s in shares3], "| sum:", recomputed3)
+print("UNEVEN SPLIT BALANCES:", recomputed3 == payment3.amount)   # True
 ```
 
 **That rounding line is the whole lesson.** `100.00 / 3` is `33.333…`. Rounding each
@@ -592,6 +648,13 @@ except Exception as e:
     print("protected wallet delete rejected:", type(e).__name__)
 
 # ── Clean up ───────────────────────────────────────────────────
+# PROTECT-aware order: Payment.ride and PakyawanGroup.ride are PROTECT, so
+# payments (and their receipt) go before the ride; WalletTxn.wallet is PROTECT,
+# so the ledger goes before the users. FareShare cascades with its payment.
+Receipt.objects.filter(payment__ride_id=ride.pk).delete()
+Payment.objects.filter(ride_id=ride.pk).delete()
+WalletTxn.objects.filter(wallet__passenger__user__phone__startswith="0917000002").delete()
+DriverPayout.objects.filter(driver__user__phone__in=["09170000030"]).delete()
 Ride.objects.filter(pk=ride.pk).delete()
 User.objects.filter(phone__startswith="0917000002").delete()
 drv_user.delete()
@@ -601,12 +664,18 @@ exit()
 
 ### 5. Confirm in MySQL (~10 min)
 
+Read the password from `.env` (never hardcode or print it), and pass
+`-h 127.0.0.1` — the `sakayph` user is `'sakayph'@'%'`, so socket connects fail:
+
 ```powershell
-docker compose exec mysql mysql -u sakayph -psakayph sakayph -e "SHOW TABLES;"
-docker compose exec mysql mysql -u sakayph -psakayph sakayph -e "SHOW CREATE TABLE FARE_SHARE\G"
+$pw = (Select-String -Path .env -Pattern '^MYSQL_PASSWORD=').Line.Split('=',2)[1]
+docker compose exec mysql mysql -u sakayph "-p$pw" -h 127.0.0.1 sakayph -e "SHOW TABLES;"
+docker compose exec mysql mysql -u sakayph "-p$pw" -h 127.0.0.1 sakayph -e "SHOW CREATE TABLE FARE_SHARE\G"
 ```
 
-Check `FARE_SHARE` for `UNIQUE KEY uq_fareshare_payment_passenger (payment_id, passenger_id)`.
+Check `FARE_SHARE` for `UNIQUE KEY uq_fareshare_payment_passenger (payment_id, passenger_id)`
+— D-70's fourth and final substitution. `WALLET` is worth a second look: UNIQUE
+`passenger_id` (the 1 : 0..1) and `ck_wallet_balance_nonneg`.
 
 ### 6. Commit (~10 min)
 
@@ -614,6 +683,8 @@ Check `FARE_SHARE` for `UNIQUE KEY uq_fareshare_payment_passenger (payment_id, p
 Set-Location ..
 git add backend/apps/payments/
 git commit -m "feat(payments): add wallet, payment, fare split, receipt and payout ledger"
+git add backend/prove_payments.py
+git commit -m "test(payments): keep the Step 2.06 payment-models proof script"
 git push
 ```
 
@@ -666,6 +737,7 @@ git push
 | Cannot delete a wallet | `PROTECT` on `WalletTxn.wallet` | Correct — the ledger is the audit trail. Soft-delete instead |
 | `ck_wallet_balance_nonneg` fires during a refund | The refund was written as a negative deduction | A refund is `TxnType.REFUND` with a positive amount that *increases* the balance |
 | `decimal.InvalidOperation` on the split | `total / count` where count is an int | Wrap `count` in `Decimal(count)` |
+| `ProtectedError` in the proof's cleanup | The ride was deleted before its payment / Pakyawan group (`PROTECT`) | Delete in the PROTECT-aware order — see the cleanup note in §4 |
 
 ---
 
