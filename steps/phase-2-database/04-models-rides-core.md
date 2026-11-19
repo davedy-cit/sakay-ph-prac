@@ -388,7 +388,25 @@ does not, the constraint block is misplaced.
 
 ### 3. Prove the weak entity behaves (~40 min)
 
-Seed the minimum data and exercise a chain. In `manage.py shell`:
+Seed the minimum data and exercise a chain.
+
+**Run it as a file, not a paste.** The interactive `manage.py shell` needs a blank line
+to close every block, so a multi-line paste raises `IndentationError` on line 2 — the
+Step 2.02 lesson. Save the script below as `backend/prove_weak_entity.py` (next to
+`manage.py`), **without the `exit()` line** (a REPL idiom — in a file it only raises
+`SystemExit`), then run:
+
+```powershell
+python manage.py shell -c "exec(open('prove_weak_entity.py', encoding='utf-8').read())"
+```
+
+Two details in that command are load-bearing:
+
+- **`encoding='utf-8'`** — the script's comments use box-drawing characters, and on
+  Windows `open()` defaults to the locale codepage, so the read fails with
+  `UnicodeDecodeError` without it
+- **Not `shell < file`** — `<` is a reserved operator in PowerShell; the redirection
+  form simply does not parse
 
 ```python
 from datetime import date
@@ -488,6 +506,22 @@ exit()
 
 **Every one of those seven prints is a claim from `schema_listing.md` being checked
 against the database.** That is what this step is for.
+
+Two details in the script are deliberate, and both are worth being able to explain:
+
+**The ride is deleted in check 7 *before* `u.delete()`.** `Ride.passenger` is
+`PROTECT`, so deleting the passenger first would raise `ProtectedError` — the cleanup
+only works because the ride is already gone. If you ever reorder those two lines and
+hit that error, it is correct behaviour, not a bug.
+
+**What the cleanup leaves behind, on purpose:** the two `RIDE_MODE` rows (Step 08
+seeds the full six-mode set anyway) and the three `LOCATION` rows — harmless test
+data. Leave them, or clear the locations before the next step if you want a clean
+slate:
+
+```powershell
+python manage.py shell -c "from apps.rides.models import Location; Location.objects.all().delete()"
+```
 
 ### 4. Confirm the schema in MySQL (~15 min)
 
