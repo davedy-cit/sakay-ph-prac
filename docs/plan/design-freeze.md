@@ -130,7 +130,7 @@ Each has a date because an open question without one is a question that stays op
 ## Sign-off
 
 - [ ] Every artefact in the table above exists on disk
-- [ ] `database/consistency_report.md` contains **D-62** (§3.10) and **D-63** (§3.11)
+- [ ] `database/consistency_report.md` contains **D-62** (§3.10), **D-63** (§3.11) and **D-64** (§3.12)
 - [ ] The decision log in `steps/PROGRESS.md` is current
 - [ ] No open question lacks a "decide by" date
 - [ ] `README.md` exists at the project root and reflects this freeze
