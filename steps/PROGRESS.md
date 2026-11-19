@@ -19,14 +19,12 @@ mechanical — but the calendar now needs an explicit decision, and the ladder i
 
 > ### Where I am right now
 >
-> **Next action:** **Step 2.04** — the rides-core models: `LOCATION`, `RIDE`, `RIDE_LEG`
-> (tables 10–12, including the weak entity), under the composite-key rule
-> (**D-70**: surrogate `id` + `UniqueConstraint`)
-> ([04 — Models: rides core](phase-2-database/04-models-rides-core.md)).
-> **Two files are still uncommitted:** `docker-compose.yml` (the `docker/mysql-init`
-> mount that loads `01-grants.sql`) and `docs/plan/design-freeze.md` (the D-64 sign-off
-> line) — both sit outside Step 2.03's `git add` scopes and need one follow-up commit
-> together with this file.
+> **Next action:** **Step 2.05** — the rides-feature models: `SURGE_PERIOD`,
+> `PAKYAWAN_GROUP`, `PASSENGER_PREFERRED_MODE`, `TRIP_TRACKING`, `CANCELLATION`,
+> `RATING` — **uncommenting `RideLeg.surge`** in the same step, since `SurgePeriod`
+> is what makes the field resolvable
+> ([05 — Models: rides features](phase-2-database/05-models-rides-features.md)).
+> The working tree is clean apart from this log update.
 >
 > **Pushed 19 Nov** — the Step 2.03 pair kept the design commit an ancestor of the code
 > commit, same discipline as the 15 Nov backlog split:
@@ -35,6 +33,7 @@ mechanical — but the calendar now needs an explicit decision, and the ladder i
 > |---|---|
 > | `e8e0afa` | `docs(db)` — D-66..D-69 recorded (§3.14), both EER sources updated, both PNGs re-rendered, Steps 02.03/02.09 made paste-safe |
 > | `2fbc2ec` | `feat(accounts)` — `User`, `Passenger`, `Driver`, `Vehicle`, `LGUUnit`, `Accreditation` + `RideModeLookup`, `UserManager`, `AUTH_USER_MODEL` |
+> | `11f6fc0` | `feat(rides)` — `Location`, `Ride`, `RideLeg` (weak entity, D-70) + the proof script; `bb78f30`/`b599596` carried the docs catch-up |
 > | `9e59550` | `chore(repo)` — docker services, tooling, frontend scaffold, install log |
 > | `2e6f216` | `docs(design)` — D-62 across the artefacts, **D-64** recorded, both EER PNGs re-rendered |
 > | `d13d34b` | `feat(repo)` — the Django backend: five apps, 13 enums, shared conventions |
@@ -73,15 +72,16 @@ mechanical — but the calendar now needs an explicit decision, and the ladder i
 > | Docker MySQL host port | **3307** — a native `MySQL84` service owns 3306, so `docker-compose.yml` maps `3307:3306` |
 > | Vite dev server | reachable at **`http://localhost:5173`** — it binds IPv6 loopback only, so `127.0.0.1:5173` does not answer |
 > | `backend/apps/accounts/` | ✅ **Step 2.03 complete** — `User` (`AbstractBaseUser` + `PermissionsMixin`, `USERNAME_FIELD = "phone"`, `is_active` derived from `account_status`), `UserManager` (`use_in_migrations = True`), `Passenger`, `Driver`, `Vehicle`, `LGUUnit`, `Accreditation`; D-65 applied throughout (field `id`, column `<entity>_id` via `db_column`). Commit `2fbc2ec` |
+> | `backend/apps/rides/` | ✅ **Step 2.04 complete** — `Location` (composite address, geo + area indexes), `Ride` (denormalized summary, derived `final_fare`, `recompute_chain_flags()`), `RideLeg` (weak entity: surrogate `id` + `uq_rideleg_ride_legno`, **D-70** §3.15); `RideLeg.surge` lands in Step 05. Seven-print shell proof passed; `SHOW CREATE TABLE` verified both tables. Commit `11f6fc0` |
 > | Live MySQL (checked 19 Nov) | ✅ **verified against the design** — 7 app tables + `USER_groups`/`USER_user_permissions` + Django's own tables; `SHOW CREATE TABLE` for `USER`/`PASSENGER`/`DRIVER`/`VEHICLE`/`ACCREDITATION`/`LGU_UNIT`/`RIDE_MODE`/`PLATFORM_CONFIG` matches `schema_listing.md` column for column, including the `CHAR(32)` keys (D-63), the `phone` UNIQUE (D-69) and the `uq_accreditation_driver_lgu` composite. `createsuperuser` on phone and the phone-login proof both passed |
 >
-> **Phase 0 complete. Phase 1 complete. Steps 2.01–2.03 complete.** All pushed except the
-> two stragglers named under *Next action*. The plan is **four days** behind the
-> calendar — Steps 02.04–02.09 remain and the Phase 2 window ends today. Phase 2 is
-> translation rather than design, so the remaining steps are mechanical, but the
-> calendar now needs an explicit decision — see the ladder in `docs/plan/02-roadmap.md`.
-> The account tables exist and are verified against the live database; the ride, money
-> and safety tables are still design-only.
+> **Phase 0 complete. Phase 1 complete. Steps 2.01–2.04 complete — all pushed.**
+> The plan is **four days** behind the calendar — Steps 02.05–02.09 remain and the
+> Phase 2 window ended today. Phase 2 is translation rather than design, so the
+> remaining steps are mechanical, but the calendar now needs an explicit decision —
+> see the ladder in `docs/plan/02-roadmap.md`.
+> The account and ride-core tables exist and are verified against the live database;
+> the money and safety tables are still design-only.
 
 ---
 
@@ -295,6 +295,27 @@ Step 02.08; the arithmetic is Phase 3's.
 - Three blockers hit and recorded (B-01..B-03) — none cost more than an hour
 - **Commit:** `e8e0afa` and `2fbc2ec` — pushed 19 Nov
 
+**Step 2.04 — rides core models — DONE**
+
+- **D-70 recorded first (§3.15, 19 Nov).** The four composite-key tables (RIDE_LEG now;
+  FARE_SHARE, SOS_NOTIFICATION, PASSENGER_PREFERRED_MODE in Steps 06–07) become
+  surrogate `id` PK + `UniqueConstraint`, because Django has no composite primary
+  keys. The register's next free number is now D-71
+- `Location`, `Ride`, `RideLeg` written; `RideLeg.surge` shipped commented out —
+  it points at `rides.SurgePeriod`, which Step 05 writes, and `makemigrations`
+  fails with fields.E300/E307 until that model exists
+- The seven-print weak-entity proof was run as a file rather than pasted into the
+  interactive shell (paste-safe: blank lines between blocks, `encoding='utf-8'`,
+  no `shell <` in PowerShell). All seven checks passed, including the duplicate
+  leg rejected with `uq_rideleg_ride_legno` named in the IntegrityError
+- `SHOW CREATE TABLE` verified: RIDE_LEG carries `UNIQUE KEY uq_rideleg_ride_legno
+  (ride_id, leg_no)`, the identifying FK to RIDE, and both CHECKs; RIDE carries
+  the `idx_ride_*` indexes and `ck_ride_ended_after_request`
+- The step file was made paste-safe with the run-as-file instructions and the
+  cleanup-order notes (`Ride.passenger` is PROTECT, so delete the ride before the
+  passenger)
+- **Commits:** `bb78f30`/`b599596` (docs) and `11f6fc0` (models + proof script)
+
 ---
 
 ### Phase 1 — Repository · Days 6–7 · 11–12 Nov
@@ -319,7 +340,7 @@ Step 02.08; the arithmetic is Phase 3's.
 | ✅ | [01 — Apps and shared conventions](phase-2-database/01-apps-and-shared-conventions.md) | 8 | `[x]` |
 | ✅ | [02 — Settings, `.env`, and Docker services](phase-2-database/02-settings-env-and-docker.md) | 9 | `[x]` |
 | ✅ | [03 — Models: `USER`, `PASSENGER`, `DRIVER`, `VEHICLE`, `LGU_UNIT`, `ACCREDITATION`](phase-2-database/03-models-accounts.md) | 10 | `[x]` |
-| ⬜ | [04 — Models: `LOCATION`, `RIDE`, `RIDE_LEG`](phase-2-database/04-models-rides-core.md) | 11 | `[ ]` |
+| ✅ | [04 — Models: `LOCATION`, `RIDE`, `RIDE_LEG`](phase-2-database/04-models-rides-core.md) | 11 | `[x]` |
 | ⬜ | [05 — Models: surge, Pakyawan, tracking, cancellation, rating](phase-2-database/05-models-rides-features.md) | 12 | `[ ]` |
 | ⬜ | [06 — Models: payment, wallet, receipt, payout](phase-2-database/06-models-payments.md) | 13 | `[ ]` |
 | ⬜ | [07 — Models: SOS alert, trusted contacts, notifications](phase-2-database/07-models-safety.md) | 13 | `[ ]` |
@@ -434,7 +455,7 @@ gap that raises questions.
 | 11 | Mon 16 Nov | | | | |
 | 12 | Tue 17 Nov | | | | |
 | 13 | Wed 18 Nov | | | | |
-| 14 | Thu 19 Nov | Step 2.03 — accounts models: `USER`, `PASSENGER`, `DRIVER`, `VEHICLE`, `LGU_UNIT`, `ACCREDITATION` + `RIDE_MODE` migrated; `AUTH_USER_MODEL = accounts.User`, phone login proven live; D-66..D-69 recorded (§3.14), both EER PNGs re-rendered; D-65's `db_column` convention back-filled into Steps 02.04–02.07. Full integrity check against the live DB, listing, EER and class diagrams — all match. *(Worked 17–19 Nov.)* | ✅ | `e8e0afa` `2fbc2ec` | B-01 B-02 B-03 |
+| 14 | Thu 19 Nov | Step 2.03 — accounts models: `USER`, `PASSENGER`, `DRIVER`, `VEHICLE`, `LGU_UNIT`, `ACCREDITATION` + `RIDE_MODE` migrated; `AUTH_USER_MODEL = accounts.User`, phone login proven live; D-66..D-69 recorded (§3.14), both EER PNGs re-rendered; D-65's `db_column` convention back-filled into Steps 02.04–02.07. Full integrity check against the live DB, listing, EER and class diagrams — all match. · Step 2.04 — rides core: `LOCATION`, `RIDE`, `RIDE_LEG` migrated; composite key enforced as surrogate `id` + `uq_rideleg_ride_legno` (**D-70**, §3.15); seven-print shell proof + `SHOW CREATE TABLE` both verified. *(Worked 17–19 Nov.)* | ✅ | `e8e0afa` `2fbc2ec` `bb78f30` `11f6fc0` | B-01 B-02 B-03 |
 | 15 | Fri 20 Nov | | | | |
 | 16 | Sat 21 Nov | | | | |
 | 17 | Sun 22 Nov | | | | |
