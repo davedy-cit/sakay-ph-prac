@@ -3,9 +3,12 @@
 **Project:** Sakay.ph — Isang App, Lahat ng Sakyan
 **Subject:** CCS670 Object-Oriented Software Development
 **Window:** 6 November 2026 → 6 December 2026 (31 days)
-**Today:** 15 November 2026 — calendar **Day 10**. Steps 02.01 and 02.02 are done, so the
-ladder stands at **one day** behind: Step 02.03 is Day 10's own step, and starting it today
-is what closes the gap
+**Today:** 19 November 2026 — calendar **Day 14**. Step 02.03 is done, verified against
+the live database and pushed. It was Day 10's own step, so the ladder stands at
+**four days** behind: Steps 02.04–02.09 remain and the Phase 2 window (Days 8–14) ends
+today. Phase 2 is translation rather than design, so the remaining steps are
+mechanical — but the calendar now needs an explicit decision, and the ladder in
+`docs/plan/02-roadmap.md` is where that is made
 
 > **This is a living document.** Update it at the end of every working session —
 > it takes five minutes and it is the evidence that you followed a process, which
@@ -16,16 +19,22 @@ is what closes the gap
 
 > ### Where I am right now
 >
-> **Next action:** **Step 2.03** — the account models: `USER`, `PASSENGER`, `DRIVER`,
-> `VEHICLE`, `LGU_UNIT`, `ACCREDITATION`, plus `RIDE_MODE` written first so `Vehicle.mode`
-> resolves ([03 — Models: accounts](phase-2-database/03-models-accounts.md)).
-> Nothing is uncommitted: Steps 1.06, 2.01 and 2.02 are all committed and pushed.
+> **Next action:** **Step 2.04** — the rides-core models: `LOCATION`, `RIDE`, `RIDE_LEG`
+> (tables 10–12, including the weak entity), under the composite-key rule
+> (**D-70**: surrogate `id` + `UniqueConstraint`)
+> ([04 — Models: rides core](phase-2-database/04-models-rides-core.md)).
+> **Two files are still uncommitted:** `docker-compose.yml` (the `docker/mysql-init`
+> mount that loads `01-grants.sql`) and `docs/plan/design-freeze.md` (the D-64 sign-off
+> line) — both sit outside Step 2.03's `git add` scopes and need one follow-up commit
+> together with this file.
 >
-> **Pushed 15 Nov** — the three-commit backlog split kept the design commit an ancestor of
-> the code commit, so the artefacts still precede the code in history:
+> **Pushed 19 Nov** — the Step 2.03 pair kept the design commit an ancestor of the code
+> commit, same discipline as the 15 Nov backlog split:
 >
 > | Commit | What it carries |
 > |---|---|
+> | `e8e0afa` | `docs(db)` — D-66..D-69 recorded (§3.14), both EER sources updated, both PNGs re-rendered, Steps 02.03/02.09 made paste-safe |
+> | `2fbc2ec` | `feat(accounts)` — `User`, `Passenger`, `Driver`, `Vehicle`, `LGUUnit`, `Accreditation` + `RideModeLookup`, `UserManager`, `AUTH_USER_MODEL` |
 > | `9e59550` | `chore(repo)` — docker services, tooling, frontend scaffold, install log |
 > | `2e6f216` | `docs(design)` — D-62 across the artefacts, **D-64** recorded, both EER PNGs re-rendered |
 > | `d13d34b` | `feat(repo)` — the Django backend: five apps, 13 enums, shared conventions |
@@ -37,16 +46,16 @@ is what closes the gap
 > is `implemented (Phase 2)`. The `RIDE_MODE.booking_fee` **model column** is Step 02.03's;
 > its **value** — ₱3.00 flat, charged once per ride — is **D-64**, decided 14 Nov (§3.12).
 >
-> **Verified state of the repository (checked 15 Nov):**
+> **Verified state of the repository (checked 15 Nov; the Step 2.03 rows added 19 Nov):**
 >
 > | Check | Actual |
 > |---|---|
 > | `technology_stack.md` | ✅ **complete** — §1–§7; §7 now carries the real pin-vs-resolved evidence table, and the ten `pin at install` cells in §2 are filled |
-> | `consistency_report.md` | ✅ D-01…D-61 fixed, plus **D-62** (A-13), **D-63** (UUID storage) and **D-64** (the booking fee's value, §3.12) |
+> | `consistency_report.md` | ✅ D-01…D-61 fixed, plus **D-62** (A-13), **D-63** (UUID storage), **D-64** (booking fee's value, §3.12), **D-65** (PK column convention) and **D-66..D-69** (USER auth columns, §3.14); next free is **D-70** |
 > | D-62 propagation | ✅ done — 27 tables in every forward-looking document; historical rows left at 26 on purpose; the wrong `Step 02.04` cross-reference corrected to `02.03` |
 > | `schema_listing.md` | ✅ **27 tables** — table 27 (`PLATFORM_CONFIG`) and `RIDE_MODE.booking_fee` added in Step 02.01; the `⚠ Pending` callout is resolved. The `CHAR(32)` UUID note (D-63) stands |
 > | `database/diagrams/*.puml` | ✅ **carry D-62** — `eer_development.puml` is now 27 entities and `eer_core.puml` 13, both with `PLATFORM_CONFIG` and `RIDE_MODE.booking_fee` |
-> | `database/diagrams/*.png` | ✅ **re-rendered 14 Nov** — `eer_development.png` **3805×3063** (27 entities) and `eer_core.png` **2356×2557** (13 entities) now carry `PLATFORM_CONFIG` and `RIDE_MODE.booking_fee`, confirmed by opening the rendered PNGs, not inferred. Neither dimension touches the 4096 clip (D-61). `eer_features.png` and `er_overview.png` correctly untouched — `eer_features.puml` is unchanged by D-62 and `er_overview.puml` does not model `RIDE_MODE`. Rendered via Docker `plantuml/plantuml:1.2026.10` (bundles Graphviz): `--entrypoint java … -DPLANTUML_LIMIT_SIZE=16384 -jar /opt/plantuml.jar -tpng -charset UTF-8` |
+> | `database/diagrams/*.png` | ✅ **re-rendered 14 Nov** — `eer_development.png` **3805×3063** (27 entities) and `eer_core.png` **2356×2557** (13 entities) now carry `PLATFORM_CONFIG` and `RIDE_MODE.booking_fee`, confirmed by opening the rendered PNGs, not inferred. Neither dimension touches the 4096 clip (D-61). `eer_features.png` and `er_overview.png` correctly untouched — `eer_features.puml` is unchanged by D-62 and `er_overview.puml` does not model `RIDE_MODE`. Rendered via Docker `plantuml/plantuml:1.2026.10` (bundles Graphviz): `--entrypoint java … -DPLANTUML_LIMIT_SIZE=16384 -jar /opt/plantuml.jar -tpng -charset UTF-8`. **Re-rendered again 19 Nov** for D-66..D-69 — both EER PNGs now carry `last_login`/`is_staff`/`is_superuser` and the `<<UQ>>` on `phone` (PowerShell form: `docker run --rm -v "${PWD}\..\database\diagrams:/data" plantuml/plantuml:1.2026.10 -DPLANTUML_LIMIT_SIZE=16384 -tpng -charset UTF-8 /data/eer_development.puml /data/eer_core.puml`) |
 > | Root `README.md` | ✅ **written** — Step 0.02 |
 > | `docs/plan/design-freeze.md` | ✅ **written** — Step 0.03; 13 limitations, 3 open questions; commit column filled 13 Nov |
 > | Git repository | ✅ **live** — `davedy-cit/sakay-ph-prac`, branch `main`, pushed |
@@ -63,11 +72,16 @@ is what closes the gap
 > | Docker Desktop | ✅ **installed and running** — server 29.9.3, Compose v5.7.0, WSL 2 kernel 6.18.58.1 |
 > | Docker MySQL host port | **3307** — a native `MySQL84` service owns 3306, so `docker-compose.yml` maps `3307:3306` |
 > | Vite dev server | reachable at **`http://localhost:5173`** — it binds IPv6 loopback only, so `127.0.0.1:5173` does not answer |
+> | `backend/apps/accounts/` | ✅ **Step 2.03 complete** — `User` (`AbstractBaseUser` + `PermissionsMixin`, `USERNAME_FIELD = "phone"`, `is_active` derived from `account_status`), `UserManager` (`use_in_migrations = True`), `Passenger`, `Driver`, `Vehicle`, `LGUUnit`, `Accreditation`; D-65 applied throughout (field `id`, column `<entity>_id` via `db_column`). Commit `2fbc2ec` |
+> | Live MySQL (checked 19 Nov) | ✅ **verified against the design** — 7 app tables + `USER_groups`/`USER_user_permissions` + Django's own tables; `SHOW CREATE TABLE` for `USER`/`PASSENGER`/`DRIVER`/`VEHICLE`/`ACCREDITATION`/`LGU_UNIT`/`RIDE_MODE`/`PLATFORM_CONFIG` matches `schema_listing.md` column for column, including the `CHAR(32)` keys (D-63), the `phone` UNIQUE (D-69) and the `uq_accreditation_driver_lgu` composite. `createsuperuser` on phone and the phone-login proof both passed |
 >
-> **Phase 0 complete. Phase 1 complete. Steps 2.01 and 2.02 complete — all pushed.**
-> The plan is **one day** behind the calendar — M2 still has five days for Steps
-> 02.03–02.09, which is workable because Phase 2 is translation rather than design.
-> Django can now talk to MySQL and Redis; there are still no application tables.
+> **Phase 0 complete. Phase 1 complete. Steps 2.01–2.03 complete.** All pushed except the
+> two stragglers named under *Next action*. The plan is **four days** behind the
+> calendar — Steps 02.04–02.09 remain and the Phase 2 window ends today. Phase 2 is
+> translation rather than design, so the remaining steps are mechanical, but the
+> calendar now needs an explicit decision — see the ladder in `docs/plan/02-roadmap.md`.
+> The account tables exist and are verified against the live database; the ride, money
+> and safety tables are still design-only.
 
 ---
 
@@ -251,6 +265,38 @@ Step 02.08; the arithmetic is Phase 3's.
 
 ---
 
+### Day 14 — Thu 19 Nov (executed 17–19 Nov)
+
+**Step 2.03 — accounts models — DONE**
+
+- **Artefacts first, then code.** D-66..D-69 (USER gains `last_login`, `is_staff`,
+  `is_superuser`; `phone` becomes UNIQUE) were appended to `consistency_report.md` §3.14
+  and written into both EER sources before the models existed; both PNGs re-rendered 19
+  Nov. The commit split preserved the order: `e8e0afa` (design) is an ancestor of
+  `2fbc2ec` (models)
+- **D-19 — one identity system.** `AUTH_USER_MODEL = "accounts.User"`; `phone` is
+  `USERNAME_FIELD`; `is_active` is derived from `account_status` rather than stored, so a
+  suspended account cannot log in. Rejected: dual `auth.User` + domain `User` (a bug
+  factory) and hand-rolled JWT (reimplements password hashing for nothing)
+- Six models plus `RideModeLookup` written first so `Vehicle.mode` resolves; `UserManager`
+  carries `use_in_migrations = True` so it serialises into the migration
+- **D-65 applied throughout** — field attribute `id`, physical column `<entity>_id` via
+  `db_column` — and the same convention back-filled into the step files for Steps
+  02.04–02.07 before they are written, so the four composite-key tables (D-70) stay the
+  only deliberate deviation
+- Migrated on a re-initialised volume; `docker/mysql-init/01-grants.sql` added (with the
+  compose mount) so the `test_sakayph` grant survives a fresh data directory
+- **Verified against the live database, not against hope:** `SHOW CREATE TABLE` for all
+  eight tables compared column-for-column with `schema_listing.md`; `createsuperuser` on
+  phone; the phone-login proof passed
+- A comprehensive integrity check (19 Nov) confirmed live DDL ↔ listing ↔ EER ↔ models all
+  agree on everything implemented; the class diagram still maps cleanly; the register's
+  next free number is D-70
+- Three blockers hit and recorded (B-01..B-03) — none cost more than an hour
+- **Commit:** `e8e0afa` and `2fbc2ec` — pushed 19 Nov
+
+---
+
 ### Phase 1 — Repository · Days 6–7 · 11–12 Nov
 
 | | Step | Day | Status |
@@ -272,7 +318,7 @@ Step 02.08; the arithmetic is Phase 3's.
 | ⬜ | [00 — Phase overview](phase-2-database/00-overview.md) | 8 | `[ ]` |
 | ✅ | [01 — Apps and shared conventions](phase-2-database/01-apps-and-shared-conventions.md) | 8 | `[x]` |
 | ✅ | [02 — Settings, `.env`, and Docker services](phase-2-database/02-settings-env-and-docker.md) | 9 | `[x]` |
-| ⬜ | [03 — Models: `USER`, `PASSENGER`, `DRIVER`, `VEHICLE`, `LGU_UNIT`, `ACCREDITATION`](phase-2-database/03-models-accounts.md) | 10 | `[ ]` |
+| ✅ | [03 — Models: `USER`, `PASSENGER`, `DRIVER`, `VEHICLE`, `LGU_UNIT`, `ACCREDITATION`](phase-2-database/03-models-accounts.md) | 10 | `[x]` |
 | ⬜ | [04 — Models: `LOCATION`, `RIDE`, `RIDE_LEG`](phase-2-database/04-models-rides-core.md) | 11 | `[ ]` |
 | ⬜ | [05 — Models: surge, Pakyawan, tracking, cancellation, rating](phase-2-database/05-models-rides-features.md) | 12 | `[ ]` |
 | ⬜ | [06 — Models: payment, wallet, receipt, payout](phase-2-database/06-models-payments.md) | 13 | `[ ]` |
@@ -388,7 +434,7 @@ gap that raises questions.
 | 11 | Mon 16 Nov | | | | |
 | 12 | Tue 17 Nov | | | | |
 | 13 | Wed 18 Nov | | | | |
-| 14 | Thu 19 Nov | | | | |
+| 14 | Thu 19 Nov | Step 2.03 — accounts models: `USER`, `PASSENGER`, `DRIVER`, `VEHICLE`, `LGU_UNIT`, `ACCREDITATION` + `RIDE_MODE` migrated; `AUTH_USER_MODEL = accounts.User`, phone login proven live; D-66..D-69 recorded (§3.14), both EER PNGs re-rendered; D-65's `db_column` convention back-filled into Steps 02.04–02.07. Full integrity check against the live DB, listing, EER and class diagrams — all match. *(Worked 17–19 Nov.)* | ✅ | `e8e0afa` `2fbc2ec` | B-01 B-02 B-03 |
 | 15 | Fri 20 Nov | | | | |
 | 16 | Sat 21 Nov | | | | |
 | 17 | Sun 22 Nov | | | | |
@@ -457,7 +503,9 @@ section that every capstone report is expected to have.
 
 | # | Day | Blocker | What I tried | Resolution | Days lost |
 |---|---|---|---|---|---|
-| B-01 | | | | | |
+| B-01 | 19 Nov | `mysqladmin ping -u sakayph -p sakayph` → `Unknown command: 'sakayph'` | Read the output: the space after `-p` made `sakayph` parse as a command | `-p` must be glued to the password (`-p<password>`) or left bare to prompt interactively | 0 |
+| B-02 | 19 Nov | `ERROR 1045: Access denied for user 'sakayph'@'localhost'` with the correct password | Retried the same command; connected fine through the interactive `-p` prompt | The container's user is `'sakayph'@'%'`; socket connections arrive as `@localhost`. Add `-h 127.0.0.1` so it connects over TCP as `'sakayph'@'%'` | 0 |
+| B-03 | 19 Nov | `git add database/ steps/ docker/` → `fatal: pathspec 'database/' did not match any files` | Nothing was staged — the terminal was sitting in `ride-hailingApp`, not `ride-hailingSystem` | `Set-Location` to the repo root; commits `e8e0afa` and `2fbc2ec` landed. Lesson: the two files *outside* the three scopes (`docker-compose.yml`, `docs/plan/design-freeze.md`) were missed and still need one follow-up commit | 0 |
 
 ---
 

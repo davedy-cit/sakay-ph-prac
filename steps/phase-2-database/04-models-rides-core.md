@@ -37,7 +37,7 @@ without its ride. What you do not get is a literal two-column primary key in
 engineering judgment. The same deviation left unexplained reads as an oversight.
 Record it in `consistency_report.md`:
 
-> **D-68 — Composite primary keys.** Django's ORM does not support composite primary
+> **D-70 — Composite primary keys.** Django's ORM does not support composite primary
 > keys. The documented key `(ride_id, leg_no)` is implemented as a surrogate `id`
 > primary key plus `UNIQUE (ride_id, leg_no)`. Uniqueness and the identifying
 > relationship to RIDE are both enforced by the database; only the literal key shape
@@ -46,7 +46,7 @@ Record it in `consistency_report.md`:
 
 **One entry, not four.** This is a single decision applied to four tables, and
 splitting it across four numbers would make it read as four unrelated deviations.
-Numbering continues from Step 03, which took D-65/66/67 — so this is **D-68**.
+Numbering continues from Step 03, which took D-65..D-69 — so this is **D-70**.
 Verify the next free number in your own report before you write it.
 
 ---
