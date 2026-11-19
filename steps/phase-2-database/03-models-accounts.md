@@ -28,13 +28,12 @@ procedure from `CONTRIBUTING.md`:
    `last_login DATETIME NULL`, `is_staff BOOLEAN NOT NULL DEFAULT 0`,
    `is_superuser BOOLEAN NOT NULL DEFAULT 0`
 2. Add a `UNIQUE` mark to `phone` in the same table
-3. Append **D-65/D-66/D-67** entries to `database/consistency_report.md` — one each
-   for the three added columns, since each is a separate change to the listing.
-   **Check the next free number before you write it.** D-62 is A-13 (Day 5), D-63 is
-   the `char(32)` UUID decision (Day 5), and D-64 is the booking fee's value
-   (14 Nov — see §3.12), so D-65 is the next free slot. If your report has grown
-   further than that, continue from whatever is actually next — the rule is one
-   number per change, never reuse one.
+3. Append entries to `database/consistency_report.md` — one per column, since each
+   is a separate change to the listing: **D-66** `last_login`, **D-67** `is_staff`,
+   **D-68** `is_superuser`, **D-69** `phone` UNIQUE. `D-65` is taken: on 19 Nov it
+   was recorded for the PK column convention (field attribute `id`, column
+   `<entity>_id` via `db_column`, §3.13). **Check the next free number before you
+   write it — read the last entry of the report — one number per change, never reuse one.**
 4. Update USER in **both** EER sources — `database/diagrams/eer_core.puml` **and**
    `database/diagrams/eer_development.puml`: add the three columns and mark `phone`
    with `<<UQ>>` — then re-render both PNGs (recipe in `CONTRIBUTING.md`). USER appears
@@ -230,7 +229,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     carries a UNIQUE constraint — see the design-change note for this step.
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column="user_id")
 
     full_name = models.CharField(max_length=120)
     phone = models.CharField(
@@ -433,7 +432,7 @@ class LGUUnit(models.Model):
     lgu_name = models.CharField(max_length=80)
     province = models.CharField(max_length=60)
     region = models.CharField(max_length=40)
-    contact_no = models.CharField(max_length=20, blank=True)
+    contact_no = models.CharField(max_length=20, null=True, blank=True)
 
     class Meta:
         db_table = "LGU_UNIT"
@@ -452,7 +451,7 @@ class Vehicle(models.Model):
     and a driver has at most one vehicle (1 : 0..1 in the schema).
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column="vehicle_id")
     driver = models.OneToOneField(
         Driver, on_delete=models.CASCADE, related_name="vehicle", db_column="driver_id"
     )
@@ -466,7 +465,7 @@ class Vehicle(models.Model):
     plate_number = models.CharField(max_length=12, unique=True)
     model = models.CharField(max_length=60)
     capacity = models.SmallIntegerField(null=True, blank=True)
-    route_info = models.CharField(max_length=120, blank=True)
+    route_info = models.CharField(max_length=120, null=True, blank=True)
 
     class Meta:
         db_table = "VEHICLE"
@@ -484,7 +483,7 @@ class Accreditation(models.Model):
     and a driver working across two cities holds two.
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column="accreditation_id")
     driver = models.ForeignKey(
         Driver,
         on_delete=models.CASCADE,
@@ -574,10 +573,21 @@ If `admin`, `auth` and `contenttypes` are all unapplied, you are fine.
 
 ### 6. Migrate and inspect (~30 min)
 
+The stack must be up first — a `docker compose down -v` (Step 09's grant procedure, or
+recovering from an early `migrate`) leaves the database unreachable until the containers
+are back and MySQL has finished initialising:
+
+```powershell
+docker compose up -d
+# Bare `-p` prompts for the password — `-p sakayph` with a space would make mysqladmin
+# read "sakayph" as a command to run after the ping.
+docker compose exec mysql mysqladmin ping -u sakayph -p   # → "mysqld is alive"
+```
+
 ```powershell
 Set-Location backend
 ..\.venv\Scripts\Activate.ps1
-python manage.py makemigrations rides accounts
+python manage.py makemigrations core rides accounts
 python manage.py migrate
 ```
 
@@ -598,11 +608,14 @@ ACCREDITATION
 DRIVER
 LGU_UNIT
 PASSENGER
+PLATFORM_CONFIG
 USER
 VEHICLE
 ```
 
-Plus Django's own `auth_*`, `django_*` tables.
+Plus Django's own `auth_*`, `django_*` tables, and — because Option A gives USER the auth
+M2M relations — `USER_groups` and `USER_user_permissions`. If those two are missing,
+`AUTH_USER_MODEL` is not pointing at `accounts.User`.
 
 Confirm the inheritance is what the schema describes — `PASSENGER.passenger_id` must
 be a primary key that is also a foreign key:
@@ -612,7 +625,7 @@ $pw = (Select-String -Path ..\.env -Pattern '^MYSQL_PASSWORD=').Line.Split('=', 
 docker compose exec mysql mysql -u sakayph "-p$pw" sakayph -e "SHOW CREATE TABLE PASSENGER\G"
 ```
 
-Look for `PRIMARY KEY (passenger_id)` and a `FOREIGN KEY (passenger_id) REFERENCES USER (id)`.
+Look for `PRIMARY KEY (passenger_id)` and a `FOREIGN KEY (passenger_id) REFERENCES USER (user_id)`.
 
 ### 7. Prove login works (~20 min)
 
@@ -620,7 +633,9 @@ Look for `PRIMARY KEY (passenger_id)` and a `FOREIGN KEY (passenger_id) REFERENC
 python manage.py createsuperuser
 ```
 
-It prompts for **Phone** and **Full name** (not username — that is the point). Then:
+It prompts for **Phone** and **Full name** (not username — that is the point). The
+password validators run here; a failing password can be force-created with `y` at the
+bypass prompt — fine for a local admin, never for a seeded demo account. Then:
 
 ```powershell
 python manage.py shell
@@ -661,8 +676,22 @@ exit()
 
 ```powershell
 Set-Location ..
-git add database/ backend/apps/accounts/ backend/apps/rides/ backend/config/
-git commit -m "feat(accounts): add USER, PASSENGER, DRIVER, VEHICLE, LGU_UNIT, ACCREDITATION"
+# 1. Design artefacts first (artefact-before-code discipline). docker/ carries the
+#    mysql-init grant file and compose mount that Step 09's test database needs:
+git add database/ steps/ docker/
+git commit -m @'
+docs(db): record D-66..D-69 — USER auth columns, phone UNIQUE
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+'@
+
+# 2. Then the code:
+git add backend/
+git commit -m @'
+feat(accounts): add USER, PASSENGER, DRIVER, VEHICLE, LGU_UNIT, ACCREDITATION
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+'@
 git push
 ```
 
@@ -687,7 +716,7 @@ docker compose exec mysql mysql -u sakayph "-p$pw" sakayph -e "SHOW TABLES;"
 - [ ] Setting `account_status=SUSPENDED` makes `is_active` False and blocks login
 - [ ] `SHOW CREATE TABLE PASSENGER` shows PK and FK on `passenger_id`
 - [ ] `phone` has a UNIQUE index
-- [ ] All six tables exist, plus `RIDE_MODE` from section 3
+- [ ] All six account tables exist, plus `RIDE_MODE` (section 3) and `PLATFORM_CONFIG` (table 27)
 - [ ] `SHOW CREATE TABLE RIDE_MODE` shows `booking_fee DECIMAL(8,2) NOT NULL DEFAULT 0.00`
       — the **D-62** column, and the schema listing was updated to carry it *before*
       you wrote it
@@ -700,9 +729,9 @@ docker compose exec mysql mysql -u sakayph "-p$pw" sakayph -e "SHOW TABLES;"
 ```markdown
 **Step 2.03 — accounts models — DONE**
 
-- Recorded design change: USER gains last_login, is_staff, is_superuser; phone
-  becomes UNIQUE (D-65/66/67 in consistency_report.md, schema_listing.md and both
-  EER sources updated, both PNGs re-rendered)
+- Recorded design change: USER gains last_login (D-66), is_staff (D-67),
+  is_superuser (D-68), phone UNIQUE (D-69) in consistency_report.md; schema_listing.md
+  and both EER sources updated, both PNGs re-rendered. PK column convention is D-65.
 - Chose AUTH_USER_MODEL = accounts.User (option A) over a dual identity system
 - USER uses phone as USERNAME_FIELD; is_active derived from account_status
 - PASSENGER and DRIVER use OneToOneField(primary_key=True) for class-table inheritance
@@ -718,6 +747,8 @@ docker compose exec mysql mysql -u sakayph "-p$pw" sakayph -e "SHOW TABLES;"
 
 | Symptom | Cause | Fix |
 |---|---|---|
+| `ERROR 1045 Access denied for 'sakayph'@'localhost'` | The password does not match `.env` (it was regenerated in Step 1.06), or the socket connection does not match the image's `'sakayph'@'%'` user | Use the `.env` password, `"-p$pw"` as in §6, or add `-h 127.0.0.1` to connect over TCP |
+| `mysqladmin: Unknown command: 'sakayph'` | `-p sakayph` with a space — mysqladmin read `sakayph` as the command to run after the ping | Attach the password (`"-p$pw"`) or use bare `-p` and type it at the prompt |
 | `AUTH_USER_MODEL refers to model 'accounts.User' that has not been installed` | `apps.accounts` not in `INSTALLED_APPS`, or `apps.py` name wrong | Check both; `name` must be `"apps.accounts"` |
 | `createsuperuser` asks for a username | `AUTH_USER_MODEL` not set, so Django used `auth.User` | Set it, then `docker compose down -v` and re-migrate |
 | `Cannot change AUTH_USER_MODEL` / migration conflicts | You migrated with the default user model first | `docker compose down -v`, delete `apps/*/migrations/0*.py`, migrate fresh |

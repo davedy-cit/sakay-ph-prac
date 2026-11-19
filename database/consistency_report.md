@@ -227,7 +227,9 @@ Severity: **H** = a grader would mark it wrong · **M** = visibly inconsistent �
 are not defects this audit found — they are design decisions taken afterwards, recorded
 here so the register stays the single running list of every change to the design.
 
-**The next free number is D-65.** Always confirm that by opening this file and reading
+**The next free number is D-70.** D-65 was taken on 19 Nov by the primary-key column
+convention (§3.13); D-66 through D-69 are taken by the USER authentication columns
+(§3.14). Always confirm that by opening this file and reading
 the last entry before you write a new one — the number matters more than the entry.
 
 ### 3.1 Database diagrams — cardinalities the schema cannot enforce
@@ -467,6 +469,50 @@ otherwise be made.
 
 **No diagram re-render is needed.** The EER shows the column, not its values — same
 reasoning as D-63. The seed lands in **Step 02.08**; the computation in Phase 3.
+
+### 3.13 Primary key column names (19 Nov)
+
+**This entry is a decision, not a defect** — it brings what Django stores into
+agreement with `schema_listing.md` and all four diagram sources, so an assessor
+running `SHOW CREATE TABLE` finds the names the design writes.
+
+**What was wrong.** Step 02.01's recorded "Option A" put every surrogate PK in a
+column named `id` — `USER.id`, `VEHICLE.id`, `ACCREDITATION.id`, … — while
+`schema_listing.md` and both EER sources write `user_id`, `vehicle_id`,
+`accreditation_id`, … on 23 tables. The FKs already carried `db_column`, so half
+the database would have read one way and half the other.
+
+**Now.** Every surrogate PK keeps the Django field attribute `id` (so Python reads
+like Django: `ride.id`) and gains `db_column="<entity>_id"` so the physical column
+matches the schema (e.g. `RIDE.id` is stored as `ride_id`, and
+`PASSENGER.passenger_id → REFERENCES USER (user_id)`). Subtype PKs
+(`PASSENGER.passenger_id`, `DRIVER.driver_id`) already matched. The four
+composite-key surrogates (RIDE_LEG, FARE_SHARE, SOS_NOTIFICATION,
+PASSENGER_PREFERRED_MODE) stay plain `id` and are recorded separately as D-70.
+
+| ID | Sev | Artifact | Was | Now | Why |
+|---|---|---|---|---|---|
+| D-65 | **L** | `schema_listing.md` (unchanged), both EER sources (unchanged), `backend/apps/*/models.py` | Surrogate PKs stored in a column named `id` | Surrogate PKs stored in columns named after their entity (`user_id`, `vehicle_id`, …) via `db_column`; field attribute unchanged | The phase rule is "the code follows the design": `SHOW CREATE TABLE` must read like the EER, and none of the listing rows, diagram lines, or PNGs change |
+
+**Rejected alternative.** Column `id` everywhere (Step 02.01's Option A): cheaper to write,
+but the database diverges from every design artefact on 23 tables with nothing to
+explain it — exactly what D-63 exists to prevent.
+
+### 3.14 USER authentication columns (19 Nov)
+
+**This entry is a decision, not a defect.** Integrating Django's authentication
+framework with the domain USER table (Option A, `AUTH_USER_MODEL = "accounts.User"`,
+recorded as D-19 in `steps/PROGRESS.md`) needs three columns the UML model does not
+carry, and the login identifier `phone` must be unique so `authenticate(phone=...)`
+is unambiguous. They are infrastructure, not domain: the domain's own status is
+`account_status`, and `is_active` is derived from it.
+
+| ID | Sev | Artifact | Was | Now | Why |
+|---|---|---|---|---|---|
+| D-66 | **L** | `database/schema_listing.md`, `backend/apps/accounts/models.py` | USER had no `last_login` | `last_login DATETIME NULL` | Session bookkeeping for Django's auth backend |
+| D-67 | **L** | `database/schema_listing.md`, `backend/apps/accounts/models.py` | USER had no `is_staff` | `is_staff BOOLEAN NOT NULL DEFAULT 0` | Admin-site access flag |
+| D-68 | **L** | `database/schema_listing.md`, `backend/apps/accounts/models.py` | USER had no `is_superuser` | `is_superuser BOOLEAN NOT NULL DEFAULT 0` | Admin-site superuser flag |
+| D-69 | **L** | `database/schema_listing.md`, both EER sources, `backend/apps/accounts/models.py` | `phone` was a plain column | `phone` carries `UNIQUE` | `phone` is the login identifier (`USERNAME_FIELD`); two users sharing one number makes login ambiguous |
 
 ---
 

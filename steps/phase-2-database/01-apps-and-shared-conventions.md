@@ -288,6 +288,9 @@ class UUIDModel(models.Model):
 
     Django stores UUIDField as CHAR(32) on MySQL, which matches the
     ``UUID`` type used throughout database/schema_listing.md.
+
+    Concrete models whose PK column must match the schema (per D-65) declare their
+    own `id` field with `db_column="<entity>_id"` instead of inheriting this one.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -344,13 +347,13 @@ the column name is separate from the attribute name. Two options:
 
 | Option | Field | Column | Trade-off |
 |---|---|---|---|
-| **A (chosen)** | `id` | `id` | Idiomatic Django; `ride.id` reads naturally in Python |
-| B | `user_id` | `user_id` | Matches the schema document exactly; `user.user_id` is redundant |
+| **Chosen (19 Nov)** | `id` | `<entity>_id` via `db_column` | Python reads like Django, the database reads like the diagrams — recorded as D-65 |
+| A (rejected 19 Nov) | `id` | `id` | leaves `SHOW CREATE TABLE` saying `id` where the listing and both EER sources say `user_id` |
+| B (rejected) | `user_id` | `user_id` | attribute name is redundant |
 
-This plan uses **A** and sets `db_table` to the schema's table name, so the
-*database* still reads like the diagrams while the *Python* reads like Django. Note
-the choice in the decision log — it is the kind of small inconsistency an assessor
-may ask about.
+This plan uses the chosen hybrid and sets `db_table` to the schema's table name, so
+the *database* reads exactly like the diagrams while the *Python* reads like Django.
+The choice is recorded as D-65 in `database/consistency_report.md` §3.13.
 
 ### 5. Add `core` constants (~10 min)
 
@@ -498,8 +501,7 @@ python -c "from apps.core import enums; print(len([n for n in dir(enums) if not 
 - Fixed all five apps.py `name` attributes to the dotted path
 - Wrote all 13 domains as TextChoices in apps/core/enums.py
 - Added UUIDModel, TimeStampedModel, MoneyField, CoordinateField abstractions
-- Decision: PK attribute named `id` (Django idiom) while db_table keeps the
-  schema's UPPER_SNAKE name
+- Decision: PK field attribute `id`, physical column `<entity>_id` via `db_column` (D-65) — database reads like the diagrams; Python reads like Django
 - **D-62 (A-13):** PLATFORM_CONFIG added as table 27; schema_listing.md updated first
   (EER sources + PNG re-render added to this step on 14 Nov, after the first run missed them)
 - **Commit:** <sha>

@@ -79,7 +79,7 @@ class Location(models.Model):
     "rides from Barangay Poblacion" a query rather than a string match.
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column="location_id")
 
     street = models.CharField(max_length=120)
     barangay = models.CharField(max_length=60)
@@ -122,7 +122,7 @@ class Ride(models.Model):
     schema_listing.md records why each is kept.
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column="ride_id")
 
     passenger = models.ForeignKey(
         "accounts.Passenger",

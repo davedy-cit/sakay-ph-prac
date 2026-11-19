@@ -27,12 +27,15 @@ entity "USER" as user {
   * user_id : UUID <<PK>>
   --
   * full_name : VARCHAR(120)
-  * phone : VARCHAR(15)
+  * phone : VARCHAR(15) <<UQ>>
   email : VARCHAR(120)
   * password_hash : VARCHAR(255)
   * registration_date : DATE
   * user_role : VARCHAR(12)
   * account_status : VARCHAR(12)
+  * last_login : DATETIME
+  * is_staff : BOOLEAN
+  * is_superuser : BOOLEAN
 }
 
 entity "PASSENGER" as pax {

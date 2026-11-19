@@ -136,3 +136,8 @@ fare calculator, the ride lifecycle, or the traceability matrix.
 **Three hard freezes:** feature freeze Day 22 (27 Nov), UI freeze Day 27 (2 Dec),
 documentation freeze Day 29 (4 Dec). They exist because the last week is always
 shorter than it looks.
+
+**Django Superuser**
+Phone: 09171234567
+Full name: AdminSakayph
+Password: Admin2627

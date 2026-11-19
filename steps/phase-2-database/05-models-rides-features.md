@@ -61,7 +61,7 @@ class SurgePeriod(models.Model):
     fare stays explainable after the window closes.
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column="surge_id")
 
     lgu = models.ForeignKey(
         "accounts.LGUUnit",
@@ -142,7 +142,7 @@ class PakyawanGroup(models.Model):
     the schema. A solo ride simply has no group.
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column="group_id")
 
     ride = models.OneToOneField(
         Ride, on_delete=models.CASCADE, related_name="pakyawan_group", db_column="ride_id"
@@ -299,7 +299,7 @@ class Cancellation(models.Model):
     may since have changed.
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column="cancel_id")
 
     ride = models.OneToOneField(
         Ride, on_delete=models.CASCADE, related_name="cancellation", db_column="ride_id"
@@ -342,7 +342,7 @@ class Rating(models.Model):
     ``fields.E304``.
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column="rating_id")
 
     ride = models.ForeignKey(
         Ride, on_delete=models.CASCADE, related_name="ratings", db_column="ride_id"

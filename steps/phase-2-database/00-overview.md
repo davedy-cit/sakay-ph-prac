@@ -122,8 +122,12 @@ Phase 2 steps must not reissue them:
 | **D-62** | A-13 — booking fee, commission rule, chain discount dropped, `mock3` arithmetic corrected | Day 5, [Step 0.01](../phase-0-design-completion/01-complete-technology-stack.md) |
 | **D-63** | UUIDs stored as `char(32)` on MySQL rather than a native `UUID` column | Day 5, [Step 0.03](../phase-0-design-completion/03-design-freeze-check.md) |
 | **D-64** | `RIDE_MODE.booking_fee` seeded at ₱3.00 flat on every mode, charged once per ride | 14 Nov, recorded in [Step 08](08-migrations-seed-and-admin.md)'s seed data |
-| **D-65/66/67** | `USER` gains `last_login`, `is_staff`, `is_superuser`; `phone` becomes `UNIQUE` | Phase 2, [Step 03](03-models-accounts.md) |
-| **D-68** | The four composite primary keys become surrogate `id` + `UniqueConstraint` | Phase 2, [Step 04](04-models-rides-core.md) |
+| **D-65** | Surrogate PK columns keep the schema's names (`user_id`, `vehicle_id`, …): field attribute `id`, column `<entity>_id` via `db_column` | 19 Nov pre-flight, amends [Step 01](01-apps-and-shared-conventions.md) §4 |
+| **D-66** | USER gains `last_login` | Phase 2, [Step 03](03-models-accounts.md) |
+| **D-67** | USER gains `is_staff` | Phase 2, [Step 03](03-models-accounts.md) |
+| **D-68** | USER gains `is_superuser` | Phase 2, [Step 03](03-models-accounts.md) |
+| **D-69** | `phone` becomes `UNIQUE` | Phase 2, [Step 03](03-models-accounts.md) |
+| **D-70** | The four composite primary keys become surrogate `id` + `UniqueConstraint` | Phase 2, [Step 04](04-models-rides-core.md) |
 
 **Before writing any entry, open `consistency_report.md` and read the last number in
 it.** The table above is what the step files expect; your report is what actually
@@ -164,8 +168,8 @@ exception afterwards. They exist so that Step 04 looks like Step 06.
 
 | Convention | Rule | Why |
 |---|---|---|
-| **Primary key** | `UUIDField(primary_key=True, default=uuid4, editable=False)` named `<entity>_id` | Matches the schema exactly; UUIDs are not guessable, which matters for a ride-tracking app |
-| **UUID storage** | `CharField(max_length=32)` via a custom field, or MySQL `CHAR(32)` | See "If it goes wrong" — the default `CHAR(32)` choice has a performance cost that is irrelevant here but worth knowing |
+| **Primary key** | `UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column="<entity>_id")` — field attribute `id`, physical column `<entity>_id` | Matches the schema exactly; UUIDs are not guessable, which matters for a ride-tracking app (D-65) |
+| **UUID storage** | Django's default `UUIDField` → MySQL `CHAR(32)` | D-63; no custom field — one was considered and rejected (Step 0.03) |
 | **Timestamps** | `DateTimeField`; `auto_now_add` only where the schema says *(added)* | `request_time` is a business timestamp, not an audit one |
 | **Money** | `DecimalField(max_digits=..., decimal_places=2)` | **Never `FloatField`.** A fare that rounds wrong is a bug you cannot explain |
 | **Coordinates** | `DecimalField(max_digits=9, decimal_places=6)` | Matches the schema; ~11 cm precision, more than enough |

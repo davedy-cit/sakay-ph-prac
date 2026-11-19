@@ -47,12 +47,15 @@ Supertype for every person on the platform — passengers, drivers and admins.
 |---|---|---|---|---|
 | user_id | UUID | PK | — | `User.userId` |
 | full_name | VARCHAR(120) | NOT NULL | — | `User.fullName` |
-| phone | VARCHAR(15) | NOT NULL | — | `User.phone` |
+| phone | VARCHAR(15), UNIQUE | NOT NULL | — | `User.phone` |
 | email | VARCHAR(120) | NULL | — | `User.email` |
 | password_hash | VARCHAR(255) | NOT NULL | — | `User.passwordHash` |
 | registration_date | DATE | NOT NULL | — | `User.registrationDate` |
 | user_role | VARCHAR(12) | NOT NULL | domain `UserRole` | *(added — specialization discriminator)* |
 | account_status | VARCHAR(12) | NOT NULL | domain `AccountStatus` | *(added)* |
+| last_login | DATETIME | NULL |  |  |
+| is_staff | BOOLEAN | NOT NULL, DEFAULT 0 |  |  |
+| is_superuser | BOOLEAN | NOT NULL, DEFAULT 0 |  |  |
 
 ## 2. PASSENGER — subtype of USER
 

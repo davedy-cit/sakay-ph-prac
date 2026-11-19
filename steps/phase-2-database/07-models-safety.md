@@ -56,7 +56,7 @@ class TrustedContact(models.Model):
     as a multivalued attribute. A passenger has 0..* of these.
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column="contact_id")
 
     passenger = models.ForeignKey(
         "accounts.Passenger",
@@ -97,7 +97,7 @@ class SOSAlert(models.Model):
     can raise one; the schema says so and the use-case diagram agrees.
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column="alert_id")
 
     ride = models.OneToOneField(
         "rides.Ride", on_delete=models.PROTECT, related_name="sos_alert", db_column="ride_id"

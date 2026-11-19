@@ -40,7 +40,10 @@ django.db.utils.OperationalError: (1044, "Access denied for user 'sakayph'@'%'
 to database 'test_sakayph'")
 ```
 
-Fix it properly, so a fresh clone works too. Create `docker/mysql-init/01-grants.sql`:
+Fix it properly, so a fresh clone works too. Create `docker/mysql-init/01-grants.sql`
+(if Step 03's commit already added it together with the mount below, skip creation —
+the grant only needs the data directory to be re-initialised once, so confirm with the
+`SHOW GRANTS` check at the end of this section before reaching for `down -v`):
 
 ```sql
 -- Runs once, on first initialisation of the MySQL data directory.

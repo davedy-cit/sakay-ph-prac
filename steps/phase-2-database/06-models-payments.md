@@ -86,7 +86,7 @@ class Wallet(models.Model):
     cash-only passenger simply has no wallet row.
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column="wallet_id")
 
     passenger = models.OneToOneField(
         "accounts.Passenger",
@@ -128,7 +128,7 @@ class Payment(models.Model):
     (PAYMENT -> WALLET is 0..1 : 0..*).
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column="payment_id")
 
     ride = models.OneToOneField(
         "rides.Ride", on_delete=models.PROTECT, related_name="payment", db_column="ride_id"
@@ -311,7 +311,7 @@ class WalletTxn(models.Model):
     passenger-wallet transaction and live in DRIVER_PAYOUT instead.
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column="txn_id")
 
     wallet = models.ForeignKey(
         Wallet, on_delete=models.PROTECT, related_name="transactions", db_column="wallet_id"
@@ -366,7 +366,7 @@ class DriverPayout(models.Model):
     Cannot be a WALLET_TXN row, because WALLET is passenger-scoped.
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column="payout_id")
 
     driver = models.ForeignKey(
         "accounts.Driver",
