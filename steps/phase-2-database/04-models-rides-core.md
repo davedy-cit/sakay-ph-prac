@@ -305,14 +305,16 @@ class RideLeg(models.Model):
 
     # Bagyo Mode: records the multiplier actually applied to this leg, so a
     # fare can be explained after the surge window has closed.
-    surge = models.ForeignKey(
-        "rides.SurgePeriod",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="legs",
-        db_column="surge_id",
-    )
+    # UNCOMMENT IN STEP 05 — `SurgePeriod` is written there, and makemigrations
+    # cannot resolve "rides.SurgePeriod" until it exists:
+    # surge = models.ForeignKey(
+    #     "rides.SurgePeriod",
+    #     on_delete=models.SET_NULL,
+    #     null=True,
+    #     blank=True,
+    #     related_name="legs",
+    #     db_column="surge_id",
+    # )
 
     status = models.CharField(
         max_length=16, choices=RideStatus.choices, default=RideStatus.REQUESTED
@@ -526,7 +528,7 @@ git push
 - [ ] A duplicate `(ride, leg_no)` raises `IntegrityError`
 - [ ] A leg whose origin equals its destination raises `IntegrityError`
 - [ ] Deleting a ride deletes its legs
-- [ ] The `RIDE_LEG` composite-key deviation is recorded in `consistency_report.md`
+- [ ] The `RIDE_LEG` composite-key deviation is recorded in `consistency_report.md` (done 19 Nov — **D-70**, §3.15)
 - [ ] Committed and pushed
 
 ---
@@ -538,7 +540,7 @@ git push
 
 - Added LOCATION (composite address split into 4 columns), RIDE, RIDE_LEG
 - RIDE_LEG composite key (ride_id, leg_no) implemented as surrogate id +
-  UniqueConstraint uq_rideleg_ride_legno — recorded as a documented deviation
+  UniqueConstraint uq_rideleg_ride_legno — recorded as **D-70** (§3.15)
 - Added CheckConstraints: leg_no >= 1, origin != destination, ended_at >= request_time
 - final_fare is a derived property (sum of legs), not a column
 - recompute_chain_flags() maintains leg_count and is_trip_chain from one query
@@ -552,7 +554,7 @@ git push
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `Related model 'rides.SurgePeriod' cannot be resolved` | Step 05 has not run | Expected. Comment out `RideLeg.surge`, or write Step 05's `SurgePeriod` first |
+| `Related model 'rides.SurgePeriod' cannot be resolved` | Step 05 has not run | The `surge` field ships commented out in §1 for exactly this reason — leave it out for now and uncomment it in Step 05 |
 | `Related model 'accounts.Passenger' cannot be resolved` | `apps.accounts` not installed | Check `INSTALLED_APPS` and the `apps.py` name |
 | Duplicate `(ride, leg_no)` was allowed | The constraint is missing from the migration | Delete the migration, fix `Meta.constraints`, regenerate |
 | `CheckConstraint` rejected at import | Django 6 renamed the `check=` argument | Use `condition=` — `check=` was removed |

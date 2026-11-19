@@ -227,10 +227,11 @@ Severity: **H** = a grader would mark it wrong · **M** = visibly inconsistent �
 are not defects this audit found — they are design decisions taken afterwards, recorded
 here so the register stays the single running list of every change to the design.
 
-**The next free number is D-70.** D-65 was taken on 19 Nov by the primary-key column
+**The next free number is D-71.** D-65 was taken on 19 Nov by the primary-key column
 convention (§3.13); D-66 through D-69 are taken by the USER authentication columns
-(§3.14). Always confirm that by opening this file and reading
-the last entry before you write a new one — the number matters more than the entry.
+(§3.14); D-70 is taken by the composite-primary-key substitution (§3.15). Always
+confirm that by opening this file and reading the last entry before you write a new
+one — the number matters more than the entry.
 
 ### 3.1 Database diagrams — cardinalities the schema cannot enforce
 
@@ -513,6 +514,23 @@ is unambiguous. They are infrastructure, not domain: the domain's own status is
 | D-67 | **L** | `database/schema_listing.md`, `backend/apps/accounts/models.py` | USER had no `is_staff` | `is_staff BOOLEAN NOT NULL DEFAULT 0` | Admin-site access flag |
 | D-68 | **L** | `database/schema_listing.md`, `backend/apps/accounts/models.py` | USER had no `is_superuser` | `is_superuser BOOLEAN NOT NULL DEFAULT 0` | Admin-site superuser flag |
 | D-69 | **L** | `database/schema_listing.md`, both EER sources, `backend/apps/accounts/models.py` | `phone` was a plain column | `phone` carries `UNIQUE` | `phone` is the login identifier (`USERNAME_FIELD`); two users sharing one number makes login ambiguous |
+
+### 3.15 Composite primary keys (19 Nov)
+
+**This entry is an implementation deviation, not a schema change.** The schema's
+documented primary keys for the weak entity and the three associative entities are
+composite (`schema_listing.md`, design decision 1), and the EER diagrams draw them
+that way. Django's ORM cannot declare a composite primary key, so each table gets a
+surrogate `id` (physical column `<entity>_id`, per D-65) plus a `UniqueConstraint`
+that enforces the composite key's uniqueness in MySQL. The identifying relationship
+(the NOT NULL FK to the parent) and the uniqueness guarantee are both
+database-enforced; only the literal key shape in `SHOW CREATE TABLE` differs.
+Alternatives rejected: `django-composite-pk` (an unmaintained dependency) and raw SQL
+in a migration (hand-written DDL the next `makemigrations` fights).
+
+| ID | Sev | Artifact | Was | Now | Why |
+|---|---|---|---|---|---|
+| D-70 | **M** | `backend/apps/rides/models.py` (RIDE_LEG); the same substitution in FARE_SHARE, SOS_NOTIFICATION and PASSENGER_PREFERRED_MODE (Steps 06–07) | Documented PK `(ride_id, leg_no)` and its three counterparts | Surrogate `id` PK + `UNIQUE (ride_id, leg_no)` as `uq_rideleg_ride_legno`, and one `UniqueConstraint` each for the other three | Django has no composite primary keys. Uniqueness and the identifying FK are still enforced by MySQL; only the key's literal shape differs, and this entry is the explanation an assessor should find |
 
 ---
 
