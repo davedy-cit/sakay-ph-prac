@@ -29,7 +29,29 @@ which table, you understand your own design:
 
 ### 1. Append the six models (~120 min)
 
-Add to `backend/apps/rides/models.py`. Extend the imports:
+**First, uncomment `RideLeg.surge`.** The block at the bottom of `RideLeg`,
+marked `# UNCOMMENT IN STEP 05 — SurgePeriod is written there`, comes alive in
+this step. Delete the comment markers so the field reads:
+
+```python
+    surge = models.ForeignKey(
+        "rides.SurgePeriod",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="legs",
+        db_column="surge_id",
+    )
+```
+
+It is safe now: `SurgePeriod` is defined below in this same step, and Django
+resolves the lazy string reference regardless of class order. The migration
+this step produces therefore does two jobs — six new tables *plus* the
+`surge_id` column and FK on RIDE_LEG.
+
+**Then extend the imports.** The file already imports `uuid`,
+`MinValueValidator`, `timezone` and two enum names from Step 2.04 — merge,
+don't replace. The end state of the import block:
 
 ```python
 import uuid
@@ -47,7 +69,10 @@ from apps.core.enums import (
 )
 ```
 
-Then:
+(`DeliveryStatus` is unused by these six models — it belongs to Step 06's
+payment tables. Harmless to import now.)
+
+Then append the six models to the end of `backend/apps/rides/models.py`:
 
 ```python
 class SurgePeriod(models.Model):
@@ -449,6 +474,36 @@ python manage.py migrate
 
 ### 3. Prove the constraints and the unary relationship (~45 min)
 
+**Run it as a file, not pasted into the interactive shell.** Same lesson as
+Step 2.04: the interactive REPL needs blank lines between blocks (a paste
+raises `IndentationError`), PowerShell reserves `<`, and `open()` on Windows
+defaults to the locale codepage while this script contains box-drawing
+characters. Save the script block below as `backend/prove_rides_features.py`
+(minus the final `exit()`), then:
+
+```powershell
+Set-Location backend
+..\.venv\Scripts\python.exe manage.py shell -c "exec(open('prove_rides_features.py', encoding='utf-8').read())"
+```
+
+**Rerun gotcha:** the script creates users on phones `09170000010/11`, and
+`phone` is UNIQUE. If the script dies partway, the cleanup block never runs and
+a rerun fails on `create_user` before anything else. Clear the leftovers first:
+
+```python
+from apps.accounts.models import User
+from apps.rides.models import Ride
+Ride.objects.filter(passenger__user__phone__in=["09170000010", "09170000011"]).delete()
+User.objects.filter(phone__in=["09170000010", "09170000011"]).delete()
+```
+
+(Rides first — `Ride.passenger` is PROTECT, so deleting the user alone fails.)
+
+The fixtures `get_or_create` a **CAR** row on purpose: §6's duplicate test needs
+two *distinct* modes. An earlier draft fell back to `tricycle` when CAR was
+absent from `RIDE_MODE` — which made the second `PassengerPreferredMode`
+create a `(passenger, TRICYCLE)` duplicate and crash *outside* any try-block.
+
 In `manage.py shell`:
 
 ```python
@@ -465,9 +520,19 @@ from apps.rides.models import (
 )
 
 # ── Fixtures ───────────────────────────────────────────────────
-tricycle = RideModeLookup.objects.get(mode_code=RideMode.TRICYCLE)
-car = RideModeLookup.objects.get(mode_code=RideMode.CAR) if \
-    RideModeLookup.objects.filter(mode_code=RideMode.CAR).exists() else tricycle
+# get_or_create, not get: RIDE_MODE only carries what earlier steps seeded,
+# and §6's duplicate test needs TWO DISTINCT modes — a `car == tricycle`
+# fallback would violate uq_prefmode_passenger_mode outside any try-block.
+tricycle, _ = RideModeLookup.objects.get_or_create(
+    mode_code=RideMode.TRICYCLE,
+    defaults=dict(mode_name="Tricycle", base_fare=Decimal("25.00"),
+                  per_km_rate=Decimal("12.00"), seat_capacity=3, is_shared=False),
+)
+car, _ = RideModeLookup.objects.get_or_create(
+    mode_code=RideMode.CAR,
+    defaults=dict(mode_name="Car", base_fare=Decimal("50.00"),
+                  per_km_rate=Decimal("18.00"), seat_capacity=4, is_shared=False),
+)
 
 pax_user = User.objects.create_user(phone="09170000010", password="t", full_name="Ana Reyes",
                                     user_role=UserRole.PASSENGER)
@@ -604,9 +669,14 @@ database.
 
 ### 4. Confirm in MySQL (~15 min)
 
+Read the password from `.env` (never hardcode or print it), and pass
+`-h 127.0.0.1` — the `sakayph` user is `'sakayph'@'%'`, so socket connects fail.
+`-p` glues to the password; a space after `-p` makes mysql prompt or misread:
+
 ```powershell
-docker compose exec mysql mysql -u sakayph -psakayph sakayph -e "SHOW TABLES;"
-docker compose exec mysql mysql -u sakayph -psakayph sakayph -e "SHOW CREATE TABLE RATING\G"
+$pw = (Select-String -Path .env -Pattern '^MYSQL_PASSWORD=').Line.Split('=',2)[1]
+docker compose exec mysql mysql -u sakayph "-p$pw" -h 127.0.0.1 sakayph -e "SHOW TABLES;"
+docker compose exec mysql mysql -u sakayph "-p$pw" -h 127.0.0.1 sakayph -e "SHOW CREATE TABLE RATING\G"
 ```
 
 In `RATING` you should see two foreign keys both pointing at `USER`, with different
@@ -618,6 +688,8 @@ constraint names. That is the unary relationship in the DDL.
 Set-Location ..
 git add backend/apps/rides/
 git commit -m "feat(rides): add surge, Pakyawan, preferred modes, tracking, cancellation, rating"
+git add backend/prove_rides_features.py
+git commit -m "test(rides): keep the Step 2.05 feature-model proof script"
 git push
 ```
 
@@ -671,6 +743,8 @@ git push
 | `Driver.rating` stays `None` | `_refresh_driver_rating` found no Driver for that user | It looks up `Driver.objects.filter(user_id=...)` — confirm the ratee is a driver |
 | `TripTracking` migration uses `char(32)` | You gave it a UUID PK | It must be `BigAutoField` — see the schema, table 23 |
 | `pax.preferred_mode_names` returns `[]` | `related_name` mismatch | `PassengerPreferredMode.passenger` must have `related_name="preferred_modes"` |
+| Proof crashes on `uq_prefmode_passenger_mode` at §6 | The fixtures fell back to `tricycle` for `car` — two creates, one mode | `get_or_create` a real CAR row (see §3 note) |
+| Rerun fails on `create_user` (1062, phone) | A previous run died before its cleanup block | Delete the probe rides then users — see §3's rerun gotcha |
 
 ---
 
