@@ -15,6 +15,9 @@ class UUIDModel(models.Model):
 
     Django stores UUIDField as CHAR(32) on MySQL, which matches the
     ``UUID`` type used throughout database/schema_listing.md.
+
+    Concrete models whose PK column must match the schema (per D-65) declare their
+    own `id` field with `db_column="<entity>_id"` instead of inheriting this one.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -75,7 +78,7 @@ class PlatformConfig(models.Model):
 
     key = models.CharField(max_length=60, primary_key=True)
     value = models.CharField(max_length=255)
-    description = models.CharField(max_length=255, blank=True)
+    description = models.CharField(max_length=255, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

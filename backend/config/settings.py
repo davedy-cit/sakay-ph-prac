@@ -228,3 +228,13 @@ LOGGING = {
         "django.channels": {"handlers": ["console"], "level": "INFO", "propagate": False},
     },
 }
+
+# ── Authentication ─────────────────────────────────────────────
+# The domain's own USER table is Django's auth user model (Option A, D-19 in
+# steps/PROGRESS.md). Set before the first migration — changing it afterwards
+# means rebuilding the database.
+AUTH_USER_MODEL = "accounts.User"
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+]
