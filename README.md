@@ -101,6 +101,11 @@ honest record of what was done on which day.
 
 Requires Docker Desktop, Python 3.14 and Node 24.
 
+> **Setting up a new machine from scratch?** Follow
+> [`docs/plan/setup-guide.md`](docs/plan/setup-guide.md) — the progressive
+> step-by-step manual with expected outputs and a troubleshooting table. The
+> commands below are the short form.
+
 ```powershell
 # 1. Services
 docker compose up -d
