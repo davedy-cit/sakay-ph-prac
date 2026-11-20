@@ -112,6 +112,12 @@ copied from `database/consistency_report.md` §4; items 9–13 were added at the
 13. **One Vue application with role-based routes**, not separate passenger and driver
     apps. Fewer moving parts, one build, one deployment — and the mockups are a single app
     anyway.
+14. **An SOS can only be raised during a ride (recorded 19 Nov, Step 2.07).**
+    `SOS_ALERT.ride_id` is NOT NULL + UNIQUE — 1 : 0..1 with RIDE. A passenger walking to a
+    pickup point, or a driver between trips, has no way to trigger one. Reasonable scope for
+    a capstone; widening it would need a nullable `ride_id` and an unride alert path through
+    every consumer. The schema says so, and the limitation is deliberately kept rather than
+    patched.
 
 ---
 
