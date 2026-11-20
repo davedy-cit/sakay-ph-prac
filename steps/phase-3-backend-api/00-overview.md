@@ -40,9 +40,9 @@ comparing your class diagram to your code should find the classes.
 | | Step | Day | What exists when it's done |
 |---|---|---|---|
 | ✅ | [01 — JWT auth and simulated OTP](01-jwt-auth-and-otp.md) | 15 | Register (passenger + driver), login by phone, refresh; OTP stored in Redis with a TTL |
-| ⬜ | [02 — Serializers, viewsets and Swagger](02-serializers-viewsets-and-swagger.md) | 16 | CRUD for the core entities; `/api/docs/` renders |
-| ⬜ | 03 — FareCalculator | 17 | Base fare + per-km + booking fee + Pakyawan split + surge multiplier, unit tested |
-| ⬜ | 04 — MatchingEngine | 18 | Radius search via geopy, accept/decline, **the no-driver timeout path** |
+| ✅ | [02 — Serializers, viewsets and Swagger](02-serializers-viewsets-and-swagger.md) | 16 | CRUD for the core entities; `/api/docs/` renders |
+| ✅ | [03 — FareCalculator](03-fare-calculator.md) | 17 | Base fare + per-km + booking fee + Pakyawan split + surge multiplier, unit tested |
+| ✅ | [04 — MatchingEngine](04-matching-engine.md) | 18 | Radius search via geopy, accept/decline, **the no-driver timeout path** |
 | ⬜ | 05 — Ride lifecycle and cancellation | 19 | Request → match → en route → ongoing → complete, plus the cancellation fee/refund policy |
 | ⬜ | 06 — Isang Biyahe trip chain | 20 | Multi-leg booking; `RIDE_LEG` written in order; the chain totals |
 | ⬜ | 07 — Pakyawan grouping | 20 | Group formation, seat capacity, `FARE_SHARE` splitting that sums exactly |
@@ -52,10 +52,7 @@ comparing your class diagram to your code should find the classes.
 | ⬜ | 11 — Payment, wallet and receipt | 22 | Simulated gateway, wallet ledger, receipt issue |
 | ⬜ | 12 — Driver payout | 22 | Earnings request and simulated disbursement |
 
-**These are titles, not links — the files do not exist yet.** Step 01 is written
-and executed; the rest become links to `NN-name.md` in this folder as they are
-written. Until then there is nothing to open, which is why nothing here is
-clickable.
+**Files now exist for Steps 01–04** (links above are clickable). The remaining steps become links as they are written.
 
 **Days 20, 21 and 22 carry two to three steps each.** That is the roadmap's plan, not
 an accident. By then the patterns are established and each step is largely mechanical.

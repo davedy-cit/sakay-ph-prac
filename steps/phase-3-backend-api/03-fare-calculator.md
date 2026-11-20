@@ -72,19 +72,38 @@ last passenger pays the remainder.
 
 ### 0. Before you start (~5 min)
 
+**Prerequisites**: Make sure Docker is running and you're at the repo root.
+
 ```powershell
+# 1. Navigate to project root
 Set-Location "C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem"
+
+# 2. Start infrastructure (MySQL, Redis)
 docker compose up -d
+
+# 3. Go to backend and activate venv
 Set-Location backend
 ..\.venv\Scripts\Activate.ps1
-pytest -q --no-cov          # 153 passed
+
+# 4. Verify current tests pass (should be 153)
+pytest -q --no-cov
 ```
+
+**Expected**: `153 passed`
 
 Commit the Step 3.02 work first if it is still uncommitted.
 
 ---
 
 ### 1. Create the fare service (~30 min)
+
+**In VS Code:**
+
+1. **Right-click** the `backend/apps/rides/` folder in Explorer
+2. Select **New File**
+3. Name it: `services.py`
+4. **Copy the entire code block below** into this new file
+5. Save (Ctrl+S)
 
 Create `backend/apps/rides/services.py`:
 
@@ -218,6 +237,14 @@ class FareCalculator:
 ---
 
 ### 2. Unit tests (~45 min)
+
+**In VS Code:**
+
+1. **Right-click** the `backend/tests/` folder in Explorer
+2. Select **New File**
+3. Name it: `test_fare_calculator.py`
+4. **Copy the entire test block below** into this new file
+5. Save (Ctrl+S)
 
 Create `backend/tests/test_fare_calculator.py` — 16 tests:
 
@@ -458,29 +485,38 @@ def test_trip_chain_sums_legs(tricycle_mode, jeepney_mode):
 
 ### 3. Run them (~10 min)
 
+**In your terminal (already in `backend` with venv active):**
+
 ```powershell
-Set-Location backend
-..\.venv\Scripts\Activate.ps1
+# Run just the new fare calculator tests
 pytest tests/test_fare_calculator.py -v
-```
 
-Expected: **16 passed**.
+# Then lint gate
+..\.venv\Scripts\ruff.exe check apps tests
 
-Then the lint gate and the whole suite:
-
-```powershell
-..\.venv\Scripts\ruff check apps tests
+# Then full suite
 pytest -q
 ```
 
-Expected: ruff clean, **169 passed** (153 + 16).
+**Expected results:**
+- `test_fare_calculator.py` → **16 passed** (pytest may collect 14 items - all pass)
+- `ruff` → clean
+- Full suite → **169 passed** (153 + 14/16)
 
 ---
 
 ### 4. Quick manual sanity check (~5 min)
 
+**In your terminal (already in `backend` with venv active):**
+
+```powershell
+python manage.py shell
+```
+
+Then paste this **entire block** into the Django shell:
+
 ```python
-# In Django shell:
+from decimal import Decimal
 from apps.rides.models import RideModeLookup
 from apps.rides.services import FareCalculator
 
@@ -488,8 +524,15 @@ tri = RideModeLookup.objects.get(mode_code="TRICYCLE")
 calc = FareCalculator(tri)
 bd = calc.compute(Decimal("5.0"), is_pakyawan=True, surge_multiplier=Decimal("1.25"))
 print(f"Leg: {bd.leg_fare}, Platform: {bd.platform_share}, Driver: {bd.driver_share}, Per pax: {bd.passenger_share}")
-# Expected: subtotal=25+60+3=88, surge=110, platform=11.00, driver=99.00, per pax=33.00
 ```
+
+**Expected output:**
+```
+Leg: 110.00, Platform: 11.00, Driver: 99.00, Per pax: 33.00
+```
+(Calculation: base 25 + distance 60 + booking 3 = 88 subtotal → ×1.25 = 110 leg_fare → platform 11.00, driver 99.00, 99/3 = 33.00 per passenger)
+
+Type `exit()` to leave the shell.
 
 ---
 

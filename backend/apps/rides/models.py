@@ -697,4 +697,31 @@ class Rating(models.Model):
         )["a"]
         Driver.objects.filter(pk=driver.pk).update(
             rating=round(avg, 1) if avg is not None else None
-        )    
+        )
+
+
+# Module-level helper for MatchingEngine (uses accounts models)
+
+def get_online_drivers_with_location(mode: "RideModeLookup"):
+    """
+    Return online drivers with a vehicle of the given mode who have a
+    fresh cached location. Used by MatchingEngine.
+
+    The Redis location check is done in Python (in MatchingEngine) because
+    Redis is outside the ORM.
+    """
+    from django.db.models import Exists, OuterRef
+    from apps.accounts.models import Driver, Vehicle
+    from apps.core.enums import AccredStatus
+
+    # Drivers with an active vehicle of this mode
+    vehicle_subq = Vehicle.objects.filter(
+        driver=OuterRef("pk"),
+        mode=mode,
+    )
+    drivers = Driver.objects.filter(
+        is_online=True,
+        accreditation_status=AccredStatus.VERIFIED,
+    ).filter(Exists(vehicle_subq))
+
+    return drivers
