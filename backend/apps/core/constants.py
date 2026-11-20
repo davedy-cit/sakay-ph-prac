@@ -4,7 +4,6 @@ Values that a real operator would change without a code deploy belong in
 PLATFORM_CONFIG (a database table). Values that are structural belong here.
 """
 
-from decimal import Decimal
 
 # ── Matching ───────────────────────────────────────────────────
 DEFAULT_SEARCH_RADIUS_KM = 3.0

@@ -7,9 +7,9 @@ import pytest
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
-from apps.core.enums import GroupStatus, RideMode, RideStatus, SurgeTrigger
+from apps.core.enums import GroupStatus, RideStatus, SurgeTrigger
 from apps.rides.models import (
-    Location, PakyawanGroup, PassengerPreferredMode, Rating, Ride, RideLeg,
+    PakyawanGroup, PassengerPreferredMode, Rating, Ride, RideLeg,
     SurgePeriod, TripTracking,
 )
 

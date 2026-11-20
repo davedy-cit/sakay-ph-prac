@@ -4,19 +4,13 @@ Written incrementally across Steps 03-05. This step contributes only
 RIDE_MODE, because Vehicle in the accounts app references it.
 """
 
-from django.db import models
-
-from apps.core.enums import RideMode
-
 import uuid
 
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 from django.utils import timezone
-from apps.core.enums import RideMode, RideStatus
-
 
 from apps.core.enums import (
-    DeliveryStatus,
     GroupStatus,
     RideMode,
     RideStatus,

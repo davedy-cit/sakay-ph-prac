@@ -40,7 +40,7 @@ comparing your class diagram to your code should find the classes.
 | | Step | Day | What exists when it's done |
 |---|---|---|---|
 | ✅ | [01 — JWT auth and simulated OTP](01-jwt-auth-and-otp.md) | 15 | Register (passenger + driver), login by phone, refresh; OTP stored in Redis with a TTL |
-| ⬜ | 02 — Serializers, viewsets and Swagger | 16 | CRUD for the core entities; `/api/docs/` renders |
+| ⬜ | [02 — Serializers, viewsets and Swagger](02-serializers-viewsets-and-swagger.md) | 16 | CRUD for the core entities; `/api/docs/` renders |
 | ⬜ | 03 — FareCalculator | 17 | Base fare + per-km + booking fee + Pakyawan split + surge multiplier, unit tested |
 | ⬜ | 04 — MatchingEngine | 18 | Radius search via geopy, accept/decline, **the no-driver timeout path** |
 | ⬜ | 05 — Ride lifecycle and cancellation | 19 | Request → match → en route → ongoing → complete, plus the cancellation fee/refund policy |

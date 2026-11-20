@@ -1,17 +1,23 @@
 """Account-API views. Thin wrappers over RegistrationService and OtpService."""
 
 from django.conf import settings
-from rest_framework import status
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
+from rest_framework import status, viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from apps.accounts.models import Accreditation, Vehicle
+from apps.accounts.permissions import IsDriver
 from apps.accounts.serializers import (
+    AccreditationSerializer,
     OtpRequestSerializer,
     OtpVerifySerializer,
     RegisterSerializer,
     SakayTokenObtainPairSerializer,
+    VehicleSerializer,
 )
 from apps.accounts.services import (
     OtpError,
@@ -24,6 +30,10 @@ from apps.accounts.services import (
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        request=RegisterSerializer,
+        responses={201: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+    )
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -60,6 +70,7 @@ class LoginView(TokenObtainPairView):
 class MeView(APIView):
     """The authenticated caller's own account, with its subtype profile."""
 
+    @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request):
         user = request.user
         data = {
@@ -88,6 +99,10 @@ class MeView(APIView):
 class OtpRequestView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        request=OtpRequestSerializer,
+        responses={200: OpenApiTypes.OBJECT, 429: OpenApiTypes.OBJECT},
+    )
     def post(self, request):
         serializer = OtpRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -109,6 +124,10 @@ class OtpRequestView(APIView):
 class OtpVerifyView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        request=OtpVerifySerializer,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+    )
     def post(self, request):
         serializer = OtpVerifySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -119,3 +138,29 @@ class OtpVerifyView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response({"verified": True})
+
+
+class VehicleViewSet(viewsets.ModelViewSet):
+    """A driver's vehicle. The driver is always the caller — never a body field."""
+
+    permission_classes = [IsDriver]
+    serializer_class = VehicleSerializer
+
+    def get_queryset(self):
+        return Vehicle.objects.filter(driver=self.request.user.driver_profile)
+
+    def perform_create(self, serializer):
+        serializer.save(driver=self.request.user.driver_profile)
+
+
+class AccreditationViewSet(viewsets.ModelViewSet):
+    """Sertipikadong Manong — a driver's own LGU badges."""
+
+    permission_classes = [IsDriver]
+    serializer_class = AccreditationSerializer
+
+    def get_queryset(self):
+        return Accreditation.objects.filter(driver=self.request.user.driver_profile)
+
+    def perform_create(self, serializer):
+        serializer.save(driver=self.request.user.driver_profile)

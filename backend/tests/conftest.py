@@ -25,7 +25,7 @@ def tricycle(db):
     return RideModeLookup.objects.create(
         mode_code=RideMode.TRICYCLE, mode_name="Tricycle",
         base_fare=Decimal("25.00"), per_km_rate=Decimal("12.00"),
-        seat_capacity=3, is_shared=False,
+        seat_capacity=3, is_shared=False, booking_fee=Decimal("3.00"),
     )
 
 
