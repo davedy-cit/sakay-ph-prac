@@ -59,6 +59,11 @@ python manage.py squashmigrations accounts 0001 0004
 
 Do not squash once real data exists. Today it is free.
 
+Executed 20 Nov: `makemigrations --check --dry-run` → `No changes detected`;
+`showmigrations` shows every migration applied (accounts 0001, core 0001,
+rides 0001–0003, payments 0001, safety 0001, plus Django's own). About ten
+migration files — no squashing needed.
+
 ### 2. Write the `seed_lookups` command (~60 min)
 
 Create the directory structure:
@@ -299,6 +304,11 @@ data, which is what you want when you tune fares during Phase 4 testing.
 **Don't forget the import.** `_seed_platform_config` needs `PlatformConfig` added to
 the import from `apps.core.models`, alongside `RideModeLookup`, `PaymentMethodLookup`
 and `LGUUnit`. Without it the command dies with `NameError` on its first run.
+
+Verified 20 Nov: the command is discovered, seeds all reference rows, and a
+second run reports `updated` for every row and creates nothing new —
+idempotent, so it is safe to run in the README setup and after every
+`down -v`.
 
 ### 3. Write the admin registrations (~40 min)
 
@@ -635,107 +645,140 @@ No `try/except ImportError` guard: `PlatformConfig` is required as of **D-62**, 
 missing model is a real error and should surface as one rather than silently skipping
 the registration.
 
-### 4. Prove the whole thing from scratch (~30 min)
+### 4. Prove the whole thing from scratch (~30 min) — DONE 20 November
 
 This is the M2 exit criterion, run literally. **It destroys your data — which is
-fine, because nothing in it is real yet.**
+fine, because nothing in it is real yet.** Run from the repository root. Every
+password below is read from the root `.env` (never hardcoded, never printed) and
+the `-p` flag is glued to its value (`"-p$pw"`, never `-p <password>`).
+
+**Fresh volume, migrate, seed (twice):**
 
 ```powershell
-Set-Location "C:\Users\MCC IT Admin\Downloads\MIT\CCS670-Object-Orented Software Development\Project\ride-hailingSystem"
 docker compose down -v
 docker compose up -d
 # wait for MySQL to report healthy
 docker compose ps
 
 Set-Location backend
-..\.venv\Scripts\Activate.ps1
-python manage.py migrate
-python manage.py seed_lookups
-python manage.py seed_lookups      # run twice — must be idempotent
+..\.venv\Scripts\python.exe manage.py migrate
+..\.venv\Scripts\python.exe manage.py seed_lookups
+..\.venv\Scripts\python.exe manage.py seed_lookups   # second run: all "updated", nothing new
 ```
 
-The second run must print `updated` for every row and create nothing new.
-
-Then count the tables:
+**Count the tables — exactly 27 application tables:**
 
 ```powershell
-docker compose exec mysql mysql -u sakayph -psakayph sakayph -e "SHOW TABLES;"
-```
-
-Cross-check against `database/schema_listing.md`. All 27 application tables must be
-present. Rather than eyeball a wall of names, count them:
-
-```powershell
-docker compose exec mysql mysql -u sakayph -psakayph sakayph -N -e "
+Set-Location ..
+$pw = (Select-String -Path .env -Pattern '^MYSQL_PASSWORD=').Line.Split('=',2)[1]
+docker compose exec mysql mysql -u sakayph "-p$pw" sakayph -N -e "
 SELECT COUNT(*) FROM information_schema.tables
 WHERE table_schema='sakayph'
-  AND table_name NOT LIKE 'django\_%'
-  AND table_name NOT LIKE 'auth\_%';"
+  AND table_name NOT LIKE 'django_%'
+  AND table_name NOT LIKE 'auth_%'
+  AND table_name NOT LIKE 'USER_%';"
 ```
 
-Expected: **27** — 26 from the original design plus `PLATFORM_CONFIG`, which **D-62**
-added on 11 Nov.
-
-Then list them and tick each one off against `schema_listing.md`:
+Expected: **27**. `USER_groups` and `USER_user_permissions` are Django's own
+M2M tables and are excluded alongside `django_%`/`auth_%`. List them and tick
+each off against `database/schema_listing.md`:
 
 ```powershell
-docker compose exec mysql mysql -u sakayph -psakayph sakayph -N -e "
+docker compose exec mysql mysql -u sakayph "-p$pw" sakayph -N -e "
 SELECT table_name FROM information_schema.tables
 WHERE table_schema='sakayph'
-  AND table_name NOT LIKE 'django\_%'
-  AND table_name NOT LIKE 'auth\_%'
+  AND table_name NOT LIKE 'django_%'
+  AND table_name NOT LIKE 'auth_%'
+  AND table_name NOT LIKE 'USER_%'
 ORDER BY table_name;"
 ```
 
-**Export the DDL as a readable artifact** (~5 min). Audit finding **A-04** observed
-that the design phase deliberately generated no SQL, which left nothing a marker
-could read to see the schema. Migrations are the DDL now — this just writes them out
-in a form a person can read without running anything.
+**Export the DDL** (audit finding A-04: the design phase deliberately generated
+no SQL, so migrations are the DDL and this is a human-readable snapshot):
 
 ```powershell
-$root = (Select-String -Path .env -Pattern '^MYSQL_ROOT_PASSWORD=').Line.Split('=', 2)[1]
+$root = (Select-String -Path .env -Pattern '^MYSQL_ROOT_PASSWORD=').Line.Split('=',2)[1]
 docker compose exec -T mysql mysqldump -u root "-p$root" `
   --no-data --skip-comments --skip-add-drop-table --compact sakayph `
   > docs/schema.sql
-```
-
-Then strip the framework's own tables so the file shows only your 27:
-
-```powershell
-$keep = Select-String -Path docs/schema.sql -Pattern '^CREATE TABLE `(?!django_|auth_)' -AllMatches
+$keep = Select-String -Path docs/schema.sql -Pattern '^CREATE TABLE `(?!django_|auth_|USER_)' -AllMatches
 "$($keep.Matches.Count) application tables in docs/schema.sql"
 ```
 
-Expected: **27**.
-
-Commit `docs/schema.sql`. **Note what this file is and is not:** it is a
-point-in-time snapshot for a reader, *not* the source of truth. Migrations remain
-the source of truth, and nothing generates code from this file. Say so in the README
-so nobody edits it by hand and expects the database to follow.
+Expected: **27**. Commit `docs/schema.sql` — it is a point-in-time snapshot for
+a reader, *not* the source of truth. Migrations remain the source of truth.
 
 **Prove the encoding survived the rebuild** — the `ñ` in Biñan is the test:
 
 ```powershell
-docker compose exec mysql mysql -u sakayph -psakayph sakayph -e "SELECT lgu_code, lgu_name FROM LGU_UNIT WHERE lgu_code='BIN-LAG';"
+docker compose exec mysql mysql -u sakayph "-p$pw" sakayph -e "SELECT lgu_code, lgu_name FROM LGU_UNIT WHERE lgu_code='BIN-LAG';"
 ```
 
-Expected: `BIN-LAG   City of Biñan`. A `?` means the collation is wrong.
-
-Then the admin:
+Expected: `BIN-LAG   City of Biñan`. To be certain the bytes are right (PowerShell
+console rendering can mangle `ñ`), check the hex — it must end in `C3B1`:
 
 ```powershell
-python manage.py createsuperuser
-python manage.py runserver
+docker compose exec -T mysql mysql -u sakayph "-p$pw" sakayph -N -e "
+SELECT HEX(lgu_name) FROM LGU_UNIT WHERE lgu_code='BIN-LAG';"
 ```
 
-Open `http://127.0.0.1:8000/admin/` and confirm all 27 models are listed and openable.
-A model that raises a 500 on its list page usually has a broken `list_display` or a
-missing `search_fields` for an autocomplete.
+Expected: `43697479206F66204269C3B1616E`. Anything else means the collation
+regressed — `docker compose down -v`, confirm the `command:` block in
+`docker-compose.yml`, `up -d`.
 
-### 5. Update the README and tag (~25 min)
+**Superuser and admin** — create one non-interactively (password never printed)
+and prove every app's changelist opens:
 
-The root README's "Running it" section was an honest placeholder in Step 0.02. Replace
-it with the real commands:
+```powershell
+Set-Location backend
+$env:DJANGO_SUPERUSER_PHONE="09170000000"
+$env:DJANGO_SUPERUSER_FULL_NAME="System Administrator"
+$env:DJANGO_SUPERUSER_USER_ROLE="ADMIN"
+$env:DJANGO_SUPERUSER_PASSWORD="<strong dev password>"
+..\.venv\Scripts\python.exe manage.py createsuperuser --noinput
+```
+
+Save this as `backend/admin_smoke_check.py` (delete it after running):
+
+```python
+import os
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+django.setup()
+
+from django.contrib.admin import site
+
+names = sorted(f"{m._meta.app_label}.{m._meta.model_name}" for m in site._registry)
+ours = [n for n in names if not n.startswith("auth.")]
+assert len(ours) == 27, ours
+
+from django.test import Client
+client = Client()
+assert client.login(phone="09170000000", password=os.environ["DJANGO_SUPERUSER_PASSWORD"])
+response = client.get("/admin/", HTTP_HOST="localhost")
+assert response.status_code == 200, response.status_code
+apps = sorted({n.split(".")[0] for n in ours})
+for app in apps:
+    r = client.get(f"/admin/{app}/", HTTP_HOST="localhost")
+    assert r.status_code == 200, (app, r.status_code)
+print("ADMIN SMOKE TEST OK — 27 models registered; every app changelist openable")
+```
+
+```powershell
+$env:DJANGO_SUPERUSER_PASSWORD="<same strong dev password>"
+..\.venv\Scripts\python.exe manage.py shell -c "exec(open('admin_smoke_check.py', encoding='utf-8').read())"
+Remove-Item admin_smoke_check.py
+```
+
+Equivalent to opening `http://127.0.0.1:8000/admin/` in a browser and clicking
+through every model. All 27 registered: accounts 6, core 1, payments 7, rides 10,
+safety 3. Executed 20 Nov — all checks green.
+
+### 5. Update the README and tag (~25 min) — DONE 20 November
+
+The root README's "Running it" section was an honest placeholder in Step 0.02.
+Replaced with the real commands:
 
 ````markdown
 ## Running it
@@ -764,7 +807,7 @@ npm run dev                      # http://127.0.0.1:5173
 ```
 ````
 
-Then tag the milestone:
+Tagged and pushed as commit `334af98`, tag `v0.1.0`:
 
 ```powershell
 Set-Location ..

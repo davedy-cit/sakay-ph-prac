@@ -3,12 +3,11 @@
 **Project:** Sakay.ph — Isang App, Lahat ng Sakyan
 **Subject:** CCS670 Object-Oriented Software Development
 **Window:** 6 November 2026 → 6 December 2026 (31 days)
-**Today:** 20 November 2026 — calendar **Day 14**. Steps 02.03–02.07 are done,
-verified against the live database and pushed. They were Days 10–13's own steps, so
-the ladder stands at **two days** behind: Steps 02.08–02.09 remain and the Phase 2
-window (Days 8–14) ended yesterday. Phase 2 is translation rather than design, so
-the remaining steps are mechanical — but the calendar now needs an explicit decision,
-and the ladder in `docs/plan/02-roadmap.md` is where that is made
+**Today:** 20 November 2026 — calendar **Day 14**. Steps 02.03–02.08 are done,
+verified against the live database and pushed. Phase 2 is translation rather than
+design, so its remaining step (02.09, model tests) is mechanical — but it is still
+one step of work, and the ladder in `docs/plan/02-roadmap.md` is where any calendar
+decision is made
 
 > **This is a living document.** Update it at the end of every working session —
 > it takes five minutes and it is the evidence that you followed a process, which
@@ -19,10 +18,8 @@ and the ladder in `docs/plan/02-roadmap.md` is where that is made
 
 > ### Where I am right now
 >
-> **Next action:** **Step 2.08** — migrations, seed data and admin: `mysql-init`
-> grants on a fresh volume, idempotent `seed_lookups`, `django-admin` registered
-> for all 27 models, and `migrate` clean on an empty volume
-> ([08 — Migrations, seed data and admin](phase-2-database/08-migrations-seed-and-admin.md)).
+> **Next action:** **Step 2.09** — model tests
+> ([09 — Model tests](phase-2-database/09-model-tests.md)).
 > The working tree is clean apart from this log update.
 >
 > **Pushed 19 Nov** — the Step 2.03 pair kept the design commit an ancestor of the code
@@ -39,6 +36,7 @@ and the ladder in `docs/plan/02-roadmap.md` is where that is made
 > | `6419f1e` | `test(payments)` — the Step 2.06 split-and-ledger proof script |
 > | `cc35329` | `feat(safety)` — `TrustedContact`, `SOSAlert`, `SOSNotification`, migration `0001`, plus the SOS-during-a-ride limitation in `docs/plan/design-freeze.md` item 14 |
 > | `a0dea8d` | `test(safety)` — the Step 2.07 fan-out proof script |
+| `334af98` | `feat(db): seed reference data, register admin, verify full schema`; tag `v0.1.0` pushed to `origin` |
 > | `9e59550` | `chore(repo)` — docker services, tooling, frontend scaffold, install log |
 > | `2e6f216` | `docs(design)` — D-62 across the artefacts, **D-64** recorded, both EER PNGs re-rendered |
 > | `d13d34b` | `feat(repo)` — the Django backend: five apps, 13 enums, shared conventions |
@@ -418,9 +416,7 @@ Step 02.08; the arithmetic is Phase 3's.
 | ✅ | [05 — Models: surge, Pakyawan, tracking, cancellation, rating](phase-2-database/05-models-rides-features.md) | 12 | `[x]` |
 | ✅ | [06 — Models: payment, wallet, receipt, payout](phase-2-database/06-models-payments.md) | 13 | `[x]` |
 | ✅ | [07 — Models: SOS alert, trusted contacts, fan-out](phase-2-database/07-models-safety.md) | 13 | `[x]` |
-| ⬜ | [06 — Models: payment, wallet, receipt, payout](phase-2-database/06-models-payments.md) | 13 | `[ ]` |
-| ⬜ | [07 — Models: SOS alert, trusted contacts, notifications](phase-2-database/07-models-safety.md) | 13 | `[ ]` |
-| ⬜ | [08 — Migrations, admin, seed](phase-2-database/08-migrations-seed-and-admin.md) | 14 | `[ ]` |
+| ✅ | [08 — Migrations, admin, seed](phase-2-database/08-migrations-seed-and-admin.md) | 14 | `[x]` |
 | ⬜ | [09 — Model tests](phase-2-database/09-model-tests.md) | 14 | `[ ]` |
 
 **Milestone M2 exit criterion:** `migrate` runs clean against an **empty volume**
@@ -532,7 +528,7 @@ gap that raises questions.
 | 12 | Tue 17 Nov | | | | |
 | 13 | Wed 18 Nov | | | | |
 | 14 | Thu 19 Nov | Step 2.03 — accounts models: `USER`, `PASSENGER`, `DRIVER`, `VEHICLE`, `LGU_UNIT`, `ACCREDITATION` + `RIDE_MODE` migrated; `AUTH_USER_MODEL = accounts.User`, phone login proven live; D-66..D-69 recorded (§3.14), both EER PNGs re-rendered; D-65's `db_column` convention back-filled into Steps 02.04–02.07. Full integrity check against the live DB, listing, EER and class diagrams — all match. · Step 2.04 — rides core: `LOCATION`, `RIDE`, `RIDE_LEG` migrated; composite key enforced as surrogate `id` + `uq_rideleg_ride_legno` (**D-70**, §3.15); seven-print shell proof + `SHOW CREATE TABLE` both verified. · Step 2.05 — rides features: `SURGE_PERIOD`, `PAKYAWAN_GROUP`, `PASSENGER_PREFERRED_MODE`, `TRIP_TRACKING`, `CANCELLATION`, `RATING` migrated, `RideLeg.surge` FK live; nine-check proof passed (caught and fixed a step-file fixture bug — CAR fallback made a duplicate preferred mode); RATING's two-USER-FK DDL verified. · Step 2.06 — payments: seven money models migrated; split proof sums exactly both even (4-way) and uneven (3-way); wallet CHECK, composite share key (D-70) and ledger `balance_after` all verified in the DDL. · Step 2.07 — safety: `SOS_ALERT`, `TRUSTED_CONTACT`, `SOS_NOTIFICATION` migrated; fan-out proof passed; design-freeze item 14 recorded (SOS only during a ride). *(Worked 17–20 Nov.)* | ✅ | `e8e0afa` `2fbc2ec` `bb78f30` `11f6fc0` `1d488ad` `27aa9b8` `42252be` `6419f1e` `cc35329` `a0dea8d` | B-01 B-02 B-03 |
-| 15 | Fri 20 Nov | | | | |
+| 15 | Fri 20 Nov | Step 2.08 done end-to-end: fresh volume (`down -v` → `up -d` healthy → `migrate`), `seed_lookups` twice proving idempotency (all 17 rows "updated", nothing new), exactly 27 application tables via `information_schema`, `docs/schema.sql` exported showing 27 tables with `django_%`/`auth_%`/`USER_%` stripped, `City of Biñan` byte-verified (`HEX` ends `C3B1`), superuser on phone `09170000000` created non-interactively, admin smoke test green — 27 models registered, all 5 app changelists HTTP 200. Milestone **M2: MET**. | ✅ | `334af98` + tag `v0.1.0` pushed | — |
 | 16 | Sat 21 Nov | | | | |
 | 17 | Sun 22 Nov | | | | |
 | 18 | Mon 23 Nov | | | | |
