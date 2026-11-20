@@ -251,6 +251,32 @@ python manage.py migrate
 
 ### 3. Prove the fan-out (~20 min)
 
+**Run it as a file, not pasted into the interactive shell.** Same as Steps 2.04–2.06:
+the interactive REPL needs blank lines between blocks (a paste raises
+`IndentationError`), PowerShell reserves `<`, and `open()` on Windows defaults to the
+locale codepage while this script contains box-drawing characters. Save the script
+block below as `backend/prove_safety.py` (minus the final `exit()`), then:
+
+```powershell
+Set-Location backend
+..\.venv\Scripts\python.exe manage.py shell -c "exec(open('prove_safety.py', encoding='utf-8').read())"
+```
+
+**Rerun gotcha:** the probe phone `09170000040` is UNIQUE. If the script dies
+partway, the cleanup block never runs — delete the probe ride, then the user, before
+rerunning.
+
+**Two repairs the script block below already carries** (both are lessons from the
+previous steps):
+
+1. **`get_or_create` the `RIDE_MODE` lookup, not `get`.** Step 2.05's proof crashed
+   exactly here: a bare `get` assumes an earlier step seeded the row. `get_or_create`
+   makes the script self-sufficient.
+2. **The cleanup deletes the alert before the ride.** `SOSAlert.ride` is `PROTECT` —
+   the same trap that caught Step 2.06's cleanup (`Payment.ride` PROTECT). Deleting
+   the ride first raises `ProtectedError`; the alert (whose notifications cascade
+   with it) goes first.
+
 In `manage.py shell`:
 
 ```python
