@@ -6,8 +6,9 @@
 **Today:** 20 November 2026 — calendar **Day 14**. **Phase 2 is complete**:
 Steps 02.03–02.09 are done, verified against the live database and pushed, and
 milestone **M2 is met** with test evidence — 122 model and schema-contract
-tests passing at 87% coverage. Next is **Phase 3 — Backend API** (Days 15–22),
-whose twelve step files still need to be written before its work starts
+tests passing at 87% coverage. **Phase 3 is underway** (Days 15–22): Step 3.01
+is written and executed — JWT auth, registration, simulated OTP — taking the
+suite to **139 passing**. Next: Step 3.02, serializers, viewsets and Swagger.
 
 > **This is a living document.** Update it at the end of every working session —
 > it takes five minutes and it is the evidence that you followed a process, which
@@ -18,9 +19,10 @@ whose twelve step files still need to be written before its work starts
 
 > ### Where I am right now
 >
-> **Next action:** **Phase 3, Step 3.01** — JWT auth, registration, simulated OTP
-> ([phase-3-backend-api/00-overview.md](phase-3-backend-api/00-overview.md) —
-> the twelve Phase 3 step files are written around Day 14, i.e. now).
+> **Next action:** **Phase 3, Step 3.02** — serializers, viewsets and the
+> Swagger UI at `/api/docs/`
+> ([phase-3-backend-api/00-overview.md](phase-3-backend-api/00-overview.md)).
+> Step 3.01 is done: 139 tests passing, the auth flow proven over live HTTP.
 > The working tree is clean apart from this log update.
 >
 > **Pushed 19 Nov** — the Step 2.03 pair kept the design commit an ancestor of the code
@@ -434,7 +436,7 @@ Full step breakdown: [phase-3-backend-api/00-overview.md](phase-3-backend-api/00
 
 | | Step | Day | Status |
 |---|---|---|---|
-| ⬜ | 01 — JWT auth, registration, simulated OTP | 15 | `[ ]` |
+| ✅ | [01 — JWT auth, registration, simulated OTP](phase-3-backend-api/01-jwt-auth-and-otp.md) | 15 | `[x]` 17 API tests; register/login/refresh/me + OTP live over curl |
 | ⬜ | 02 — Serializers, viewsets, OpenAPI schema | 16 | `[ ]` |
 | ⬜ | 03 — `FareCalculator` + unit tests | 17 | `[ ]` |
 | ⬜ | 04 — `MatchingEngine`, accept/decline, timeout | 18 | `[ ]` |
@@ -449,6 +451,7 @@ Full step breakdown: [phase-3-backend-api/00-overview.md](phase-3-backend-api/00
 
 > The twelve step files are written around Day 14, once Phase 2 has settled. The
 > numbers above are the filenames they will get — `phase-3-backend-api/NN-name.md`.
+> Step 01's file exists and is executed; the rest are still titles.
 
 **Milestone M3 exit criterion:** Swagger UI at `/api/docs/` can drive a complete
 ride — book → match → chain → split → track → SOS → surge → pay → receipt →
@@ -531,7 +534,7 @@ gap that raises questions.
 | 13 | Wed 18 Nov | | | | |
 | 14 | Thu 19 Nov | Step 2.03 — accounts models: `USER`, `PASSENGER`, `DRIVER`, `VEHICLE`, `LGU_UNIT`, `ACCREDITATION` + `RIDE_MODE` migrated; `AUTH_USER_MODEL = accounts.User`, phone login proven live; D-66..D-69 recorded (§3.14), both EER PNGs re-rendered; D-65's `db_column` convention back-filled into Steps 02.04–02.07. Full integrity check against the live DB, listing, EER and class diagrams — all match. · Step 2.04 — rides core: `LOCATION`, `RIDE`, `RIDE_LEG` migrated; composite key enforced as surrogate `id` + `uq_rideleg_ride_legno` (**D-70**, §3.15); seven-print shell proof + `SHOW CREATE TABLE` both verified. · Step 2.05 — rides features: `SURGE_PERIOD`, `PAKYAWAN_GROUP`, `PASSENGER_PREFERRED_MODE`, `TRIP_TRACKING`, `CANCELLATION`, `RATING` migrated, `RideLeg.surge` FK live; nine-check proof passed (caught and fixed a step-file fixture bug — CAR fallback made a duplicate preferred mode); RATING's two-USER-FK DDL verified. · Step 2.06 — payments: seven money models migrated; split proof sums exactly both even (4-way) and uneven (3-way); wallet CHECK, composite share key (D-70) and ledger `balance_after` all verified in the DDL. · Step 2.07 — safety: `SOS_ALERT`, `TRUSTED_CONTACT`, `SOS_NOTIFICATION` migrated; fan-out proof passed; design-freeze item 14 recorded (SOS only during a ride). *(Worked 17–20 Nov.)* | ✅ | `e8e0afa` `2fbc2ec` `bb78f30` `11f6fc0` `1d488ad` `27aa9b8` `42252be` `6419f1e` `cc35329` `a0dea8d` | B-01 B-02 B-03 |
 | 15 | Fri 20 Nov | Step 2.08 done end-to-end: fresh volume (`down -v` → `up -d` healthy → `migrate`), `seed_lookups` twice proving idempotency (all 17 rows "updated", nothing new), exactly 27 application tables via `information_schema`, `docs/schema.sql` exported showing 27 tables with `django_%`/`auth_%`/`USER_%` stripped, `City of Biñan` byte-verified (`HEX` ends `C3B1`), superuser on phone `09170000000` created non-interactively, admin smoke test green — 27 models registered, all 5 app changelists HTTP 200. Milestone **M2: MET**. · Also today: `docs/plan/setup-guide.md` — a from-scratch new-machine setup manual compiled from the recorded evidence. · Step 2.09 — model tests: pytest.ini + `tests/` (conftest fixtures, accounts/rides/payments/safety constraint tests, schema-contract module); **122 passed, 87% coverage** over `apps/`; two step-file bugs caught by execution (`pytestmark` needed `django_db` or all 33 contract tests died; `_app_tables` needed the `USER_%` exclusion — M2M tables named after the db_table). **Phase 2 complete.** | ✅ | `a676c93` `80bc4e4` | — |
-| 16 | Sat 21 Nov | | | | |
+| 16 | Sat 21 Nov | **Phase 3 begins.** Step 3.01 artefact written first (`steps/phase-3-backend-api/01-jwt-auth-and-otp.md`), then executed: `apps/accounts/services.py` (`RegistrationService` — USER + subtype profile in one transaction under the password policy; `OtpService` — D-14, code in Redis db 1 under `sakayph:1:otp:<phone>` with `OTP_TTL_SECONDS` TTL, 60 s cooldown, consumed on first verify), `serializers.py` (phone login via `USERNAME_FIELD`, domain claims `user_role`/`full_name` in the token), thin `views.py` + `urls.py`, `config/urls.py` wired to `/api/`. **17 API tests** (`tests/test_auth_api.py`) — register (passenger/driver/duplicate/weak-password/bad-phone/ADMIN-refused), login/refresh/me, suspended-user 401, OTP store/cooldown/consume/wrong/expired — **suite now 139 passed at **88% coverage**. Full curl walk over live `runserver`: register 201 → me 200 with Bearer → OTP request/verify/replay-400 all confirmed. Two execution bugs caught and folded back into the artefact: `validate_password` imports from `django.contrib.auth.password_validation` (not `django.core.validators`), and a bare `validate_password` inside `validate()` lands in `non_field_errors` — wrapped to key the 400 to `password`. | ✅ | *(this commit)* | — |
 | 17 | Sun 22 Nov | | | | |
 | 18 | Mon 23 Nov | | | | |
 | 19 | Tue 24 Nov | | | | |

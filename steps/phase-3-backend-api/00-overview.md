@@ -39,7 +39,7 @@ comparing your class diagram to your code should find the classes.
 
 | | Step | Day | What exists when it's done |
 |---|---|---|---|
-| ⬜ | 01 — JWT auth and simulated OTP | 15 | Register (passenger + driver), login by phone, refresh; OTP stored in Redis with a TTL |
+| ✅ | [01 — JWT auth and simulated OTP](01-jwt-auth-and-otp.md) | 15 | Register (passenger + driver), login by phone, refresh; OTP stored in Redis with a TTL |
 | ⬜ | 02 — Serializers, viewsets and Swagger | 16 | CRUD for the core entities; `/api/docs/` renders |
 | ⬜ | 03 — FareCalculator | 17 | Base fare + per-km + booking fee + Pakyawan split + surge multiplier, unit tested |
 | ⬜ | 04 — MatchingEngine | 18 | Radius search via geopy, accept/decline, **the no-driver timeout path** |
@@ -52,9 +52,10 @@ comparing your class diagram to your code should find the classes.
 | ⬜ | 11 — Payment, wallet and receipt | 22 | Simulated gateway, wallet ledger, receipt issue |
 | ⬜ | 12 — Driver payout | 22 | Earnings request and simulated disbursement |
 
-**These are titles, not links — the files do not exist yet.** Each becomes a link to
-`NN-name.md` in this folder as it is written, around Day 14. Until then there is
-nothing to open, which is why nothing here is clickable.
+**These are titles, not links — the files do not exist yet.** Step 01 is written
+and executed; the rest become links to `NN-name.md` in this folder as they are
+written. Until then there is nothing to open, which is why nothing here is
+clickable.
 
 **Days 20, 21 and 22 carry two to three steps each.** That is the roadmap's plan, not
 an accident. By then the patterns are established and each step is largely mechanical.
