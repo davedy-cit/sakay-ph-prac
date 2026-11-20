@@ -1154,7 +1154,11 @@ design-first project cannot tolerate.
 import pytest
 from django.db import connection
 
-pytestmark = pytest.mark.contract
+# Both marks: `contract` tags the suite for `pytest -m contract`; `django_db`
+# is what actually grants database access — a bare custom marker does not,
+# and without it every cursor query dies with "Database access not allowed".
+# (Found on the first execution: 33 contract tests failed on exactly that.)
+pytestmark = [pytest.mark.contract, pytest.mark.django_db]
 
 
 # ── The 27 tables ──────────────────────────────────────────────
@@ -1173,7 +1177,14 @@ DOCUMENTED_TABLES = [
 
 
 def _app_tables() -> set[str]:
-    """Table names in the current schema, excluding Django's own."""
+    """Table names in the current schema, excluding Django's own.
+
+    Three exclusions, not two: `django_%` and `auth_%` are the framework's
+    own tables, and `USER_%` is where the M2M tables for the custom user
+    land — Django names them after the model's *db_table*
+    (`USER_groups`, `USER_user_permissions`), not the app label, so they do
+    not match `auth_%`. Same lesson as Step 02.08's table count.
+    """
     with connection.cursor() as cur:
         cur.execute(
             """
@@ -1181,6 +1192,7 @@ def _app_tables() -> set[str]:
             WHERE table_schema = DATABASE()
               AND table_name NOT LIKE 'django\\_%'
               AND table_name NOT LIKE 'auth\\_%'
+              AND table_name NOT LIKE 'USER\\_%'
             """
         )
         return {row[0] for row in cur.fetchall()}
@@ -1393,7 +1405,11 @@ def test_driver_earnings_are_not_in_the_passenger_wallet():
     assert "DRIVER_PAYOUT" in _app_tables()
 ```
 
-### 7. Run them (~20 min)
+### 7. Run them (~20 min) — DONE 20 November
+
+Executed 20 Nov: **122 passed, 87% line coverage** over `apps/` on the first
+full-green run. The first run failed 33 contract tests on the `django_db`
+mark (§6 above) before that fix — every domain test passed from the start.
 
 ```powershell
 Set-Location backend
@@ -1494,6 +1510,7 @@ pytest -m contract -v
 | `Access denied ... 'test_sakayph'` | The app user cannot create the test database | Section at the top of this step — grant or init script |
 | `no tests ran` | pytest run from the repository root | `Set-Location backend` first |
 | `RuntimeError: Database access not allowed` | A fixture touches the ORM without the `db` fixture | Add `db` to that fixture's parameters |
+| The same error across a whole *module* (e.g. every contract test) | `pytestmark` carried only the custom marker — it tags, it does not grant database access | Make it a list: `pytestmark = [pytest.mark.contract, pytest.mark.django_db]` |
 | `django.core.exceptions.ImproperlyConfigured` | `DJANGO_SETTINGS_MODULE` not found | `pytest.ini` must be in `backend/`, next to `manage.py` |
 | An `IntegrityError` test fails the next test too | The failed statement poisoned the outer transaction | Wrap the failing call in `with transaction.atomic():` — every test here does |
 | `IntegrityError` not raised | The constraint is missing from the migration | `SHOW CREATE TABLE` the table; fix `Meta.constraints` and re-migrate |
@@ -1508,7 +1525,9 @@ pytest -m contract -v
 
 ## After this step
 
-**Phase 2 is complete and milestone M2 is met.** The evidence:
+**Phase 2 is complete and milestone M2 is met. — DONE 20 November** (commit
+`334af98`, tag `v0.1.0` pushed after Step 02.08; this step adds the test
+evidence: **122 passed, 87% coverage**, commit `80bc4e4`)
 
 - 27 tables migrated from a design that was audited before a line of code was written
 - Reference data seeded idempotently, so a fresh clone works in two commands
