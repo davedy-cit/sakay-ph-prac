@@ -99,18 +99,35 @@ honest record of what was done on which day.
 
 ## Running it
 
-> **Not yet runnable.** Implementation begins 11 November 2026; setup instructions land in
-> Phase 1.
+Requires Docker Desktop, Python 3.14 and Node 24.
 
-This section is deliberately honest rather than aspirational. When `docker compose up` and
-`npm run dev` actually work, they will be documented here with the exact commands.
+```powershell
+# 1. Services
+docker compose up -d
+
+# 2. Backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements/dev.txt
+Copy-Item .env.example .env      # then fill in the values
+Set-Location backend
+python manage.py migrate
+python manage.py seed_lookups
+python manage.py createsuperuser
+python manage.py runserver       # http://127.0.0.1:8000
+
+# 3. Frontend (second terminal)
+Set-Location frontend
+npm install
+npm run dev                      # http://127.0.0.1:5173
+```
 
 ## Status
 
 | Milestone | Dates | Status |
 |---|---|---|
 | M1 — Design frozen & repository live | 6–12 Nov | 🟡 in progress |
-| M2 — Database & domain model | 13–19 Nov | ⬜ |
+| M2 — Database & domain model | 13–20 Nov | ✅ |
 | M3 — All 7 features via API | 20–27 Nov | ⬜ |
 | M4 — UI complete & integrated | 28 Nov – 2 Dec | ⬜ |
 | M5 — Tested, documented, submitted | 3–6 Dec | ⬜ |
